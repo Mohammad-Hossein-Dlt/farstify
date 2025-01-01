@@ -1,10 +1,6 @@
 import datetime
 import uuid
-
-from sqlalchemy import ForeignKey, Column, Text, Boolean, Enum, Integer, BigInteger, DateTime, func, DATETIME
-from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql import UUID
-import ulid
+from sqlalchemy import ForeignKey, Column, Text, Numeric,  Boolean, Enum, Integer, BigInteger, DateTime, func
 from database import *
 from constants import *
 
@@ -12,9 +8,7 @@ from constants import *
 class Task(Base):
     __tablename__ = 'Task'
     Id = Column(BigInteger, primary_key=True, autoincrement=True)
-    ArtistId = Column(ForeignKey("Artists.Id", ondelete="CASCADE"), nullable=False)
     EpisodeId = Column(ForeignKey("DocumentsEpisodes.Id", ondelete="CASCADE"), nullable=False)
-    # File = Column(ForeignKey("DocumentsEpisodes.File", ondelete="CASCADE"), nullable=False)
     ActionState = Column(Enum(ProcessActionTaskState), nullable=False)
     CreationDate = Column(DateTime, nullable=False, server_default=func.now())
 
@@ -22,18 +16,15 @@ class Task(Base):
 class Document(Base):
     __tablename__ = 'Document'
     Id = Column(BigInteger, primary_key=True, autoincrement=True)
-    Owner = Column(ForeignKey("Artists.Id", ondelete="CASCADE"), nullable=False)
-    DirectoryName = Column(Text, unique=True, nullable=False, default=ulid.new().str)
+    DirectoryName = Column(Text, unique=True, nullable=False, default=lambda: uuid.uuid4().hex)
     Name = Column(Text, nullable=False)
     MainImage = Column(Text, nullable=True)
+    Color = Column(Text, nullable=True)
     Description = Column(Text, nullable=True)
     ContentType = Column(Enum(ContentTypes), nullable=False)
-    Active = Column(Boolean(), nullable=False, default=True)
     Single = Column(Boolean(), nullable=False, default=True)
+    Active = Column(Boolean(), nullable=False, default=True)
     CreationDate = Column(Text, nullable=False, server_default=func.now())
-
-    # episodes = relationship("DocumentsEpisodes", backref="Document")
-    contributors = relationship("Contributors", backref="Document")
 
 
 class DocumentsLinks(Base):
@@ -43,43 +34,35 @@ class DocumentsLinks(Base):
     Title = Column(Text, nullable=True)
     Link = Column(Text, nullable=True)
     OrderBy = Column(Integer, nullable=True)
+    CreationDate = Column(Text, nullable=False, server_default=func.now())
 
 
 class DocumentsEpisodes(Base):
     __tablename__ = 'DocumentsEpisodes'
     Id = Column(BigInteger, primary_key=True, autoincrement=True)
+    DocumentId = Column(ForeignKey("Document.Id", ondelete="CASCADE"), nullable=False)
     Title = Column(Text, nullable=False)
     Image = Column(Text, nullable=True)
     File = Column(Text, nullable=True)
     Duration = Column(BigInteger, nullable=False, default=0)
-    DocumentId = Column(ForeignKey("Document.Id", ondelete="CASCADE"), nullable=False)
     OrderBy = Column(Integer, nullable=True)
     CreationDate = Column(Text, nullable=False, server_default=func.now())
 
 
 class ListenedHistory(Base):
     __tablename__ = 'ListenedHistory'
-    Id = Column(UUID(as_uuid=True), primary_key=True, unique=True, default=uuid.uuid4())
+    Id = Column(Numeric(precision=100, scale=0), primary_key=True, unique=True)
     UserId = Column(ForeignKey("Users.Id", ondelete="CASCADE"), nullable=False)
-    ArtistsId = Column(ForeignKey("Artists.Id", ondelete="CASCADE"), nullable=False)
     EpisodeId = Column(ForeignKey("DocumentsEpisodes.Id", ondelete="CASCADE"), nullable=False)
-    DocumentId = Column(ForeignKey("Document.Id", ondelete="CASCADE"), nullable=False)
     CreationDate = Column(Text, nullable=False, server_default=func.now())
 
 
-class DocumentsLabels(Base):
-    __tablename__ = 'DocumentsLabels'
+class DocumentsOwners(Base):
+    __tablename__ = 'DocumentsOwners'
     Id = Column(BigInteger, primary_key=True, autoincrement=True)
-    Title = Column(Text, nullable=False)
-    DocumentId = Column(ForeignKey("Document.Id", ondelete="CASCADE"), nullable=False)
-
-
-class Contributors(Base):
-    __tablename__ = 'Contributors'
-    Id = Column(BigInteger, primary_key=True, autoincrement=True)
-    OwnerId = Column(ForeignKey("Artists.Id", ondelete="CASCADE"), nullable=False)
     ArtistId = Column(ForeignKey("Artists.Id", ondelete="CASCADE"), nullable=False)
-    DocumentId = Column(ForeignKey("Document.Id", ondelete="CASCADE"), nullable=True)
+    DocumentId = Column(ForeignKey("Document.Id", ondelete="CASCADE"), nullable=False)
+    OrderBy = Column(Integer, nullable=True)
     CreationDate = Column(Text, nullable=False, server_default=func.now())
 
 
@@ -88,56 +71,40 @@ class Categories(Base):
     Id = Column(Integer, primary_key=True, autoincrement=True)
     Name = Column(Text, nullable=False)
     Image = Column(Text, nullable=True)
-    Active = Column(Boolean(), nullable=False, default=True)
     ParentId = Column(ForeignKey("Categories.Id", ondelete="CASCADE"), nullable=True, default=None)
     Type = Column(Enum(ContentTypes), nullable=False)
+    Active = Column(Boolean(), nullable=False, default=True)
     OrderBy = Column(Integer, nullable=True)
+    CreationDate = Column(Text, nullable=False, server_default=func.now())
 
 
 class DocumentsCategories(Base):
     __tablename__ = 'DocumentsCategories'
     Id = Column(BigInteger, primary_key=True, autoincrement=True)
-    CategoryId = Column(ForeignKey("Categories.Id", ondelete="CASCADE"), nullable=False)
     DocumentId = Column(ForeignKey("Document.Id", ondelete="CASCADE"), nullable=False)
+    CategoryId = Column(ForeignKey("Categories.Id", ondelete="CASCADE"), nullable=False)
     OrderBy = Column(Integer, nullable=True)
+    CreationDate = Column(Text, nullable=False, server_default=func.now())
 
-
-# class Subscriptions(Base):
-#     __tablename__ = 'Subscriptions'
-#     Id = Column(Integer, primary_key=True, autoincrement=True)
-#     Title = Column(Text, nullable=False)
-#     Price = Column(Text, nullable=False)
-#     Period = Column(Integer, nullable=False)
-#     Discount = Column(Integer, nullable=False, default=0)
-#     IsPremiumSubscription = Column(Enum(BoolEnum), nullable=False, default=BoolEnum.false)
-#     DiscountCodeApply = Column(Enum(BoolEnum), nullable=False, default=BoolEnum.true)#
-
-# class DiscountCodes(Base):
-#     __tablename__ = 'DiscountCodes'
-#     Id = Column(Integer, primary_key=True, autoincrement=True)
-#     Code = Column(Text, nullable=False)
-#     OrdinaryPercent = Column(Integer, nullable=False, default=0)
-#     PremiumPercent = Column(Integer, nullable=False, default=0)
 
 class Agents(Base):
     __tablename__ = 'Agents'
     Id = Column(BigInteger, primary_key=True, autoincrement=True)
-    OwnerId = Column(ForeignKey("Artists.Id", ondelete="CASCADE"), nullable=False)
     EpisodeId = Column(ForeignKey("DocumentsEpisodes.Id", ondelete="CASCADE"), nullable=False)
     ArtistId = Column(ForeignKey("Artists.Id", ondelete="CASCADE"), nullable=True)
     Name = Column(Text, nullable=True)
     IsMain = Column(Boolean(), nullable=False, default=False)
     OrderBy = Column(Integer, nullable=True)
-
-    roles = relationship("AgentRoles", backref="agent_roles")
+    CreationDate = Column(Text, nullable=False, server_default=func.now())
 
 
 class AgentRoles(Base):
     __tablename__ = 'AgentRoles'
     Id = Column(BigInteger, primary_key=True, autoincrement=True)
-    AgentId = Column(ForeignKey("Agents.Id", ondelete="CASCADE"), nullable=True)
+    AgentId = Column(ForeignKey("Agents.Id", ondelete="CASCADE"), nullable=False)
     Role = Column(Enum(AgentRolesEntities), nullable=False)
     OrderBy = Column(Integer, nullable=True)
+    CreationDate = Column(Text, nullable=False, server_default=func.now())
 
 
 class UsersTemp(Base):
@@ -145,19 +112,18 @@ class UsersTemp(Base):
     Id = Column(BigInteger, primary_key=True, autoincrement=True)
     Phone = Column(Text, nullable=False)
     VerifyCode = Column(Text, nullable=False)
-    Date = Column(DateTime, nullable=False, server_default=func.now())
+    CreationDate = Column(Text, nullable=False, server_default=func.now())
 
 
 class Artists(Base):
     __tablename__ = 'Artists'
-    # Id = Column(UUID(as_uuid=True), unique=True, primary_key=True, default=str(ulid.new().uuid))
     Id = Column(BigInteger, primary_key=True, autoincrement=True)
-    DirectoryName = Column(Text, unique=True, nullable=False, default=ulid.new().str)
+    DirectoryName = Column(Text, unique=True, nullable=False, default=lambda: uuid.uuid4().hex)
     ProfileImage = Column(Text, nullable=True)
     Name = Column(Text, nullable=False)
     Active = Column(Boolean(), nullable=False, default=True)
     ContentType = Column(Enum(ContentTypes), nullable=False)
-    Date = Column(Text, nullable=False, default=datetime.datetime.now())
+    CreationDate = Column(Text, nullable=False, server_default=func.now())
 
 
 class ArtistImages(Base):
@@ -166,29 +132,31 @@ class ArtistImages(Base):
     ArtistId = Column(ForeignKey("Artists.Id", ondelete="CASCADE"), nullable=False)
     Image = Column(Text, nullable=False)
     OrderBy = Column(Integer, nullable=True)
+    CreationDate = Column(Text, nullable=False, server_default=func.now())
 
 
 class ArtistLinks(Base):
     __tablename__ = 'ArtistLinks'
     Id = Column(BigInteger, primary_key=True, autoincrement=True)
-    Title = Column(Text, nullable=True)
     ArtistId = Column(ForeignKey("Artists.Id", ondelete="CASCADE"), nullable=False)
+    Title = Column(Text, nullable=True)
     Link = Column(Text, nullable=True)
     OrderBy = Column(Integer, nullable=True)
+    CreationDate = Column(Text, nullable=False, server_default=func.now())
 
 
 class Users(Base):
     __tablename__ = 'Users'
     Id = Column(BigInteger, primary_key=True, autoincrement=True)
-    DirectoryName = Column(Text, unique=True, nullable=False, default=ulid.new().str)
+    DirectoryName = Column(Text, unique=True, nullable=False, default=lambda: uuid.uuid4().hex)
     ProfileImage = Column(Text, nullable=True)
     Name = Column(Text, nullable=False)
     Phone = Column(Text, unique=True, nullable=True)
-    UserName = Column(Text, unique=True, nullable=False, default=ulid.new().str)
+    UserName = Column(Text, unique=True, nullable=False, default=lambda: uuid.uuid4().hex[:16])
     Password = Column(Text, nullable=False)
     Email = Column(Text, unique=True, nullable=True)
     Active = Column(Boolean(), nullable=False, default=True)
-    RegistryDate = Column(Text, nullable=False, default=datetime.datetime.now())
+    CreationDate = Column(Text, nullable=False, server_default=func.now())
 
 
 class UserLikes(Base):
@@ -217,6 +185,7 @@ class PlayListRepository(Base):
     DocumentId = Column(ForeignKey("Document.Id", ondelete="CASCADE"), nullable=False)
     EpisodesId = Column(ForeignKey("DocumentsEpisodes.Id", ondelete="CASCADE"), nullable=False)
     OrderBy = Column(Integer, nullable=True)
+    CreationDate = Column(Text, nullable=False, server_default=func.now())
 
 
 class UserFollowing(Base):
@@ -229,23 +198,6 @@ class UserFollowing(Base):
     CreationDate = Column(Text, nullable=False, server_default=func.now())
 
 
-class HomePageItems(Base):
-    __tablename__ = 'HomePageItems'
-    Id = Column(Integer, primary_key=True, autoincrement=True)
-    Title = Column(Text, nullable=True)
-    Type = Column(Enum(ContentTypes), nullable=False)
-    SortedBy = Column(Enum(SortBy), nullable=False, default=SortBy.artist)
-    OrderBy = Column(Enum(OrderBy), nullable=False, default=OrderBy.asc)
-    CategoryId = Column(ForeignKey("Categories.Id", ondelete="CASCADE"), nullable=True)
-
-
-class HomePageDocumentsRepository(Base):
-    __tablename__ = 'HomePageDocumentsRepository'
-    Id = Column(Integer, primary_key=True, autoincrement=True)
-    DocumentId = Column(ForeignKey("Document.Id", ondelete="CASCADE"), nullable=False)
-    HomePageItemId = Column(ForeignKey("HomePageItems.Id", ondelete="CASCADE"), nullable=False)
-
-
 class MetaData(Base):
     __tablename__ = 'MetaData'
     Id = Column(Integer, primary_key=True, autoincrement=True)
@@ -253,6 +205,7 @@ class MetaData(Base):
     AboutUs = Column(Text, nullable=True)
     ContactUs = Column(Text, nullable=True)
     PrivacyAndTerms = Column(Text, nullable=True)
+    CreationDate = Column(Text, nullable=False, server_default=func.now())
 
 
 class SocialLink(Base):
@@ -261,3 +214,4 @@ class SocialLink(Base):
     Title = Column(Text, nullable=True)
     Type = Column(Enum(Socials), nullable=True)
     Link = Column(Text, nullable=True)
+    CreationDate = Column(Text, nullable=False, server_default=func.now())

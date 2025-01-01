@@ -1,5 +1,7 @@
 import models
 from fastapi import APIRouter, status
+
+from actions.episode_actions import get_episode_short_info
 from db_dependency import db_dependency
 from actions.artist_short_info_actions import get_artist_short_info
 from actions.document_actions import get_document_short_info
@@ -8,7 +10,7 @@ from actions.playlist_actions import get_playlist_short_info
 router = APIRouter(prefix="/search", tags=["Search"])
 
 
-@router.get("/pre-search", status_code=status.HTTP_200_OK)
+@router.get("/pre_search", status_code=status.HTTP_200_OK)
 async def pre_search(
         db: db_dependency,
         limit: int,
@@ -35,13 +37,40 @@ async def document_search(
         page: int,
         name: str,
 ):
-    search = db.query(models.Document, models.Artists).join(
-        models.Artists
-    ).where(
+    search = db.query(models.Document).where(
         models.Document.Name.contains(name)
-    ).limit(limit).offset(limit * page).all()
+    ).limit(
+        limit
+    ).offset(
+        limit * page
+    ).all()
 
-    result = [await get_document_short_info(db, document, artist) for document, artist in search]
+    result = [await get_document_short_info(db, document) for document in search]
+
+    return result
+
+
+@router.get("/episode_search", status_code=status.HTTP_200_OK)
+async def document_search(
+        db: db_dependency,
+        limit: int,
+        page: int,
+        name: str,
+):
+    search = db.query(
+        models.DocumentsEpisodes,
+        models.Document
+    ).join(
+        models.Document,
+    ).where(
+        models.DocumentsEpisodes.Title.contains(name)
+    ).limit(
+        limit
+    ).offset(
+        limit * page
+    ).all()
+
+    result = [await get_episode_short_info(db, episode, document) for episode, document in search]
 
     return result
 
@@ -49,9 +78,9 @@ async def document_search(
 @router.get("/artist_search", status_code=status.HTTP_200_OK)
 async def artist_search(
         db: db_dependency,
+        name: str,
         limit: int,
         page: int,
-        name: str,
 ):
     search = db.query(models.Artists).where(
         models.Artists.Name.contains(name)

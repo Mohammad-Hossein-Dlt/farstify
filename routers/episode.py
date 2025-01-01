@@ -12,51 +12,50 @@ from sqlalchemy import and_
 from actions_functions.task_actions import add_processing_task, update_task, check_task_in_process
 from database import sessionLocal
 from storage import storage, Buckets, storage_delete_file
+from utills.parse_null import pars_null
 from utills.temp import manual_delete_temp_dependency
 from db_dependency import db_dependency
 from utills.path_manager import make_path
-from utills.exceptions import owned_exception
-from utills.check_ownership import is_document_owned_by_artist, is_episode_owned_by_artist
 from utills.check_follow import liked_episode
 from constants import DocumentQualities, ProcessActionTaskState
 from actions.response_model import ResponseMessage
 from actions.episode_actions import get_episode_full_info, get_episode_short_info
 
-router = APIRouter()
+router = APIRouter(prefix="/episode", tags=["Episode"])
 
 
 def make_qualities(
-        # db: db_dependency,
         temp: manual_delete_temp_dependency,
-        artist_id: int,
         episode_id: int,
         document_directory: str,
         new_file_name: str,
         previous_file_name: str | None = None,
 ):
-    t1 = time.monotonic()
-
-    task = add_processing_task(artist_id=artist_id, episode_id=episode_id)
-
-    # if not task:
-    #     raise HTTPException(403, "previous upload is in processing")
-    print("////////////////")
-    print(task)
+    task = add_processing_task(episode_id=episode_id)
     update_task(task, ProcessActionTaskState.in_process)
+    audio_path = make_path(
+        temp.path,
+        new_file_name,
+        is_file=True
+    )
 
-    audio_path = make_path(temp.path, new_file_name, is_file=True)
-
-    async def remove_from_storage(file_name: storage):
+    def remove_from_storage(file_name: storage):
         try:
+            print("deleting previous files...")
             for directory in DocumentQualities.directories():
-                file_path = make_path(document_directory, directory, file_name, is_file=True)
+                file_path = make_path(
+                    document_directory,
+                    directory,
+                    file_name,
+                    is_file=True,
+                )
                 storage_delete_file(file_path, Buckets.DOCUMENT_BUCKET_NAME)
+            print("deleting previous files was complete...")
 
         except Exception as ex4:
             print(ex4)
             update_task(task, ProcessActionTaskState.error)
         else:
-            pass
             temp.delete()
 
     try:
@@ -66,9 +65,8 @@ def make_qualities(
         temp.delete()
         update_task(task, ProcessActionTaskState.error)
     else:
+        print("Creating qualities...")
         try:
-            s = time.monotonic()
-
             def audio_converter(quality: str):
                 raw_audio = AudioFileClip(audio_path)
                 new_path = make_path(temp.path, quality, new_file_name, is_file=True)
@@ -76,23 +74,30 @@ def make_qualities(
                     new_path,
                     bitrate=quality,
                     codec="libmp3lame",
+                    logger=None,
                 )
+                raw_audio.close()
 
-            # with ThreadPoolExecutor(max_workers=os.cpu_count()) as pool:
-            with ThreadPoolExecutor(max_workers=2) as pool:
+            with ThreadPoolExecutor(max_workers=os.cpu_count()) as pool:
+                # with ThreadPoolExecutor(max_workers=2) as pool:
                 futures = [pool.submit(audio_converter, q) for q in DocumentQualities.qualities()]
                 for future in as_completed(futures):
                     print(future.result())
 
-            e = time.monotonic()
-            print("Processing (Seconds)=================: " + str(round(e - s, 2)))
-            print("Processing (Minutes)=================: " + str(round((e - s) / 60, 2)))
-
-            preview_path = make_path(temp.path, DocumentQualities.preview, new_file_name, is_file=True)
+            preview_path = make_path(
+                temp.path,
+                DocumentQualities.preview,
+                new_file_name,
+                is_file=True
+            )
 
             duration = audio.duration
             clipped = audio.subclip(0, duration * 0.2)
-            clipped.write_audiofile(preview_path, codec="libmp3lame")
+            clipped.write_audiofile(
+                preview_path,
+                codec="libmp3lame",
+                logger=None,
+            )
 
             clipped.close()
             audio.close()
@@ -103,62 +108,66 @@ def make_qualities(
             temp.delete()
             update_task(task, ProcessActionTaskState.error)
         else:
+            print("Creating qualities was complete...")
+            print("uploading qualities...")
             try:
                 for q_directory in DocumentQualities.directories():
-                    temp_file = make_path(temp.path, q_directory, new_file_name, is_file=True)
-                    storage_file = make_path(document_directory, q_directory, new_file_name, is_file=True)
+                    temp_file = make_path(
+                        temp.path,
+                        q_directory,
+                        new_file_name,
+                        is_file=True
+                    )
+
+                    storage_file = make_path(
+                        document_directory,
+                        q_directory,
+                        new_file_name,
+                        is_file=True
+                    )
+
                     with open(temp_file, "rb") as file:
                         storage.upload_fileobj(file, Bucket=Buckets.DOCUMENT_BUCKET_NAME, Key=storage_file)
                         file.close()
-                    print(temp_file)
+
             except Exception as ex2:
                 print(ex2)
                 update_task(task, ProcessActionTaskState.error)
                 remove_from_storage(new_file_name)
             else:
+                print("uploading qualities was complete...")
                 try:
-                    static_db = sessionLocal()
-                    episode, document = static_db.query(models.DocumentsEpisodes, models.Document).join(
-                        models.Document,
+                    db = sessionLocal()
+                    episode = db.query(
+                        models.DocumentsEpisodes,
                     ).where(
                         models.DocumentsEpisodes.Id == episode_id,
                     ).first()
                     episode.File = new_file_name
                     episode.Duration = round(duration)
-                    static_db.commit()
-
                     update_task(task, ProcessActionTaskState.completed)
                     remove_from_storage(previous_file_name)
-
-                    static_db.close()
+                    db.commit()
+                    db.close()
                 except Exception as ex3:
                     print(ex3)
                     update_task(task, ProcessActionTaskState.error)
                     remove_from_storage(new_file_name)
-                    print("@@@@@@@@@@@@@@@@@@")
 
     temp.delete()
-    t2 = time.monotonic()
-    print("Seconds: " + str(round(t2 - t1, 2)))
-    print("Minutes: " + str(round((t2 - t1) / 60, 2)))
+
+    print("finish process")
 
 
 async def create_preview(
-        artist_id: int,
         document: models.Document,
         episode: models.DocumentsEpisodes,
         temp: manual_delete_temp_dependency,
         start_second: int,
         end_second: int,
 ):
-    task = add_processing_task(artist_id=artist_id, episode_id=episode.Id)
-
-    # if not task:
-    #     temp.delete()
-    #     raise HTTPException(403, "previous upload is in processing")
-
+    task = add_processing_task(episode_id=episode.Id)
     update_task(task, ProcessActionTaskState.in_process)
-
     try:
         storage_320k_path = make_path(
             document.DirectoryName,
@@ -166,14 +175,12 @@ async def create_preview(
             episode.File,
             is_file=True,
         )
-
         download_path = make_path(temp.path, "main-" + episode.File, is_file=True)
         temp_path = make_path(
             temp.path,
             episode.File,
             is_file=True,
         )
-
         storage_preview_path = make_path(
             document.DirectoryName,
             DocumentQualities.preview,
@@ -181,27 +188,17 @@ async def create_preview(
             is_file=True
         )
         print("Download in: ", download_path)
-
         storage.download_file(Buckets.DOCUMENT_BUCKET_NAME, storage_320k_path, download_path)
-
         audio = AudioFileClip(download_path)
-
         duration = audio.duration
-
         start = min(max(start_second, 0), duration)
-
         end = min(max(end_second, 0), duration)
-
         if start >= end:
             end = duration
-
         clipped = audio.subclip(start, end)
-
         clipped.write_audiofile(temp_path)
-
         clipped.close()
         audio.close()
-
         print("Upload from: ", temp_path)
         with open(temp_path, "rb") as file:
             storage.upload_fileobj(file, Bucket=Buckets.DOCUMENT_BUCKET_NAME, Key=storage_preview_path)
@@ -216,114 +213,111 @@ async def create_preview(
         temp.delete()
 
 
-@router.post("/create-episode", status_code=status.HTTP_201_CREATED, tags=["Episode"])
+@router.post("/insert_episode", status_code=status.HTTP_201_CREATED)
 async def create_episode(
         db: db_dependency,
-        artist_id: int,
         document_id: int,
         episode_id: int | None = None,
         title: str | None = None,
         image_file: UploadFile = File(None),
         delete_image: bool = False,
 ):
-    if not await is_document_owned_by_artist(db, document_id=document_id, artist_id=artist_id):
-        raise owned_exception
+    episode_id = pars_null(episode_id)
+    title = pars_null(title)
 
-    async def upload_image(previous_file_name: str | None) -> str:
-
-        the_document = db.query(models.Document).where(models.Document.Id == document_id).first()
-
+    async def upload_image(previous_file_name: str | None, directoryName: str) -> str:
         new_file_name = uuid.uuid4().hex + pathlib.Path(image_file.filename).suffix
-
-        image_path = make_path(the_document.DirectoryName, new_file_name, is_file=True)
-
+        image_path = make_path(directoryName, new_file_name, is_file=True)
         try:
-
             storage.upload_fileobj(image_file.file, Bucket=Buckets.DOCUMENT_BUCKET_NAME, Key=image_path)
-
         except Exception as ex:
             print(ex)
         else:
             if previous_file_name:
                 try:
-                    image_path = make_path(the_document.DirectoryName, previous_file_name, is_file=True)
+                    image_path = make_path(directoryName, previous_file_name, is_file=True)
                     storage_delete_file(image_path, Buckets.DOCUMENT_BUCKET_NAME)
-
                 except Exception as ex:
                     print(ex)
-
         return new_file_name
 
     if episode_id:
-        ep = db.query(models.DocumentsEpisodes).where(
-            and_(
-                models.DocumentsEpisodes.Id == episode_id,
-                models.DocumentsEpisodes.DocumentId == document_id
-            )
+
+        document, episode = db.query(
+            models.Document,
+            models.DocumentsEpisodes
+        ).join(
+            models.DocumentsEpisodes,
+        ).where(
+            models.DocumentsEpisodes.Id == episode_id,
         ).first()
 
-        if not ep:
-            raise HTTPException(404, "Episode not found!")
+        if not episode:
+            raise HTTPException(404, "the episode not found!")
 
-        ep.Title = title if title else ep.Title
+        episode.Title = title if title else episode.Title
 
         if image_file:
-            ep.Image = await upload_image(ep.Image)
+            episode.Image = await upload_image(episode.Image, document.DirectoryName)
         elif delete_image:
             try:
-                document = db.query(models.Document).select_from(models.DocumentsEpisodes).where(
-                    models.DocumentsEpisodes.Id == episode_id,
-                    models.DocumentsEpisodes.DocumentId == document_id).first()
-                path = make_path(document.DirectoryName, ep.Image, is_file=True)
+                path = make_path(document.DirectoryName, episode.Image, is_file=True)
                 storage_delete_file(path, Buckets.DOCUMENT_BUCKET_NAME)
-
             except Exception as ex:
                 print(ex)
             else:
-                ep.Image = None
+                episode.Image = None
 
         db.commit()
 
-        return ResponseMessage(error=False, message="Episode updated!")
+        response = {"Episode_Id": episode.Id}
     else:
-        ep = {"DocumentId": document_id, "Title": title}
-        ep = models.DocumentsEpisodes(**ep)
+
+        document = db.query(
+            models.Document,
+        ).where(
+            models.Document == document_id,
+        ).first()
+
+        episode = models.DocumentsEpisodes()
+
+        episode.DocumentId = document_id
+        episode.Title = title
+
         if image_file:
-            ep.Image = await upload_image(None)
-        db.add(ep)
+            episode.Image = await upload_image(None, document.DirectoryName)
+        db.add(episode)
         db.commit()
 
-        return ResponseMessage(error=False, message="New episode created!")
+        response = {"Episode_Id": episode.Id}
+
+    db.commit()
+    return response
 
 
-@router.post("/upload-episode-file", status_code=status.HTTP_201_CREATED, tags=["Episode"])
+@router.post("/upload_episode_file", status_code=status.HTTP_201_CREATED)
 async def upload_episode_file(
         db: db_dependency,
-        artist_id: int,
         temp: manual_delete_temp_dependency,
         episode_id: int,
         audio_file: UploadFile,
         background_tasks: BackgroundTasks = BackgroundTasks(),
 ):
-    print("........................................................")
-
-    if await check_task_in_process(artist_id=artist_id, episode_id=episode_id):
+    if await check_task_in_process(episode_id=episode_id):
         temp.delete()
         raise HTTPException(403, "previous upload is in processing")
 
-    if not await is_episode_owned_by_artist(db, episode_id=episode_id, artist_id=artist_id):
-        raise owned_exception
-
-    episode, document = db.query(models.DocumentsEpisodes, models.Document).join(
+    document, episode = db.query(
+        models.Document,
+        models.DocumentsEpisodes,
+    ).join(
         models.Document
     ).where(
-        and_(
-            models.DocumentsEpisodes.Id == episode_id,
-        )
+        models.DocumentsEpisodes.Id == episode_id,
     ).first()
 
-    if not episode:
-        return ResponseMessage(error=True, message="No episode exist!")
+    if not document or not episode:
+        raise HTTPException(404, "document or episode not found!")
 
     name_mp3 = temp.name + ".mp3"
     path_mp3 = make_path(temp.path, name_mp3, is_file=True)
@@ -341,41 +335,41 @@ async def upload_episode_file(
         make_qualities,
         # db,
         temp,
-        artist_id,
         episode.Id,
         document.DirectoryName,
         name_mp3,
         episode.File,
     )
-    return ResponseMessage(error=False, message="Episode file on processing...")
+    return ResponseMessage(error=False, message="episode file is in processing...")
 
 
-@router.post("/edit-temp", status_code=status.HTTP_201_CREATED, tags=["Episode"])
+@router.post("/edit_temp", status_code=status.HTTP_201_CREATED)
 async def edit_temp(
         db: db_dependency,
-        artist_id: int,
         temp: manual_delete_temp_dependency,
         episode_id: int,
         start_second: int,
         end_second: int,
         background_tasks: BackgroundTasks = BackgroundTasks(),
 ):
-    episode, document = db.query(models.DocumentsEpisodes, models.Document).join(
+    episode, document = db.query(
+        models.DocumentsEpisodes,
+        models.Document
+    ).join(
         models.Document
     ).where(
         models.DocumentsEpisodes.Id == episode_id
     ).first()
 
-    if not await is_document_owned_by_artist(db, document_id=document.Id, artist_id=artist_id):
-        raise owned_exception
-
-    if await check_task_in_process(artist_id=artist_id, episode_id=episode_id):
+    if await check_task_in_process(episode_id=episode_id):
         temp.delete()
-        raise HTTPException(403, "previous upload is in processing")
+        raise HTTPException(403, "previous upload is in processing!")
+
+    if not document or not episode:
+        raise HTTPException(404, "document or episode not found!")
 
     background_tasks.add_task(
         create_preview,
-        artist_id,
         document,
         episode,
         temp,
@@ -383,22 +377,60 @@ async def edit_temp(
         end_second
     )
 
-    return ResponseMessage(error=False, message="New temp episode created!")
+    return ResponseMessage(error=False, message="new temp episode is in creating...")
 
 
-@router.get("/fetch-single-episode", status_code=status.HTTP_201_CREATED, tags=["Episode"])
+@router.delete("/delete_episode_file", status_code=status.HTTP_200_OK)
+async def delete_episode_file(
+        db: db_dependency,
+        episode_id: int,
+):
+    the_document, the_episode = db.query(
+        models.Document,
+        models.DocumentsEpisodes
+    ).join(
+        models.DocumentsEpisodes
+    ).where(
+        models.DocumentsEpisodes.Id == episode_id,
+    ).first()
+
+    if not the_document or not the_episode:
+        raise HTTPException(403, "document or episode not found!")
+
+    try:
+        path = make_path(the_document.DirectoryName, is_file=False)
+        preview_path = make_path(path, DocumentQualities.preview, the_episode.File, is_file=True)
+        storage_delete_file(preview_path, Buckets.DOCUMENT_BUCKET_NAME)
+        for i in DocumentQualities.directories():
+            p = make_path(path, i, the_episode.File, is_file=True)
+            storage_delete_file(p, Buckets.DOCUMENT_BUCKET_NAME)
+    except Exception as ex:
+        print(ex)
+        raise HTTPException(500, "unable to delete the episode file completely!")
+    else:
+        the_episode.File = None
+        the_episode.Duration = 0
+        db.commit()
+        return ResponseMessage(error=False, message="episode file deleted")
+
+
+@router.get("/fetch_single_episode", status_code=status.HTTP_201_CREATED)
 async def fetch_single_episode(
         db: db_dependency,
-        document_id: int,
         episode_id: int,
         access_token: optional_user_token_dependency,
 ):
-    the_episode = db.query(models.DocumentsEpisodes).where(models.DocumentsEpisodes.Id == episode_id,
-                                                           models.DocumentsEpisodes.DocumentId == document_id).first()
-    the_document = db.query(models.Document).where(models.Document.Id == document_id).first()
+    the_document, the_episode = db.query(
+        models.Document,
+        models.DocumentsEpisodes
+    ).join(
+        models.Document
+    ).where(
+        models.DocumentsEpisodes.Id == episode_id,
+    ).first()
 
-    if the_episode is None or the_document is None:
-        raise HTTPException(404, "an error occurred!")
+    if not the_episode or not the_document:
+        raise HTTPException(404, "document or episode not found!")
 
     episode_info = await get_episode_full_info(db=db, episode=the_episode, document=the_document)
 
@@ -408,60 +440,78 @@ async def fetch_single_episode(
     return episode_info
 
 
-@router.get("/fetch-all-episodes", status_code=status.HTTP_201_CREATED, tags=["Episode"])
+@router.get("/fetch_all_episodes", status_code=status.HTTP_201_CREATED)
 async def fetch_all_episodes(
         db: db_dependency,
         document_id: int,
-        limit: int, page: int,
+        limit: int,
+        page: int,
+        access_token: optional_user_token_dependency,
 ):
     result = []
-    episodes = db.query(models.DocumentsEpisodes).where(models.DocumentsEpisodes.DocumentId == document_id).limit(
-        limit).offset(limit * page).all()
-    document = db.query(models.Document).where(models.Document.Id == document_id).first()
 
-    # artist = db.query(models.Artists).where(models.Artists.Id == document.Owner).first()
+    episodes = db.query(
+        models.DocumentsEpisodes
+    ).where(
+        models.DocumentsEpisodes.DocumentId == document_id
+    ).limit(
+        limit
+    ).offset(
+        limit * page
+    ).all()
+
+    document = db.query(
+        models.Document
+    ).where(
+        models.Document.Id == document_id
+    ).first()
 
     if document is None:
-        raise HTTPException(404, "an error occurred!")
+        raise HTTPException(404, "document not found!")
 
     for i in episodes:
-        result.append(await get_episode_short_info(db=db, episode=i, document=document))
+        episode = await get_episode_short_info(db=db, episode=i, document=document)
+
+        if access_token.permission:
+            episode.Followed = liked_episode(db=db, user_id=access_token.user_id, episode_id=episode.Id)
+
+        result.append(episode)
 
     return result
 
 
-@router.delete("/delete-episodes", status_code=status.HTTP_200_OK, tags=["Episode"])
-async def delete_episodes(
+@router.delete("/delete_episode", status_code=status.HTTP_200_OK)
+async def delete_episode(
         db: db_dependency,
-        artist_id: int,
-        document_id: int,
-        episodes_id: int,
+        episode_id: int,
 ):
-    if not await is_document_owned_by_artist(db, document_id=document_id, artist_id=artist_id):
-        raise owned_exception
+    the_document, the_episode = db.query(
+        models.Document,
+        models.DocumentsEpisodes
+    ).join(
+        models.DocumentsEpisodes
+    ).where(
+        models.DocumentsEpisodes.Id == episode_id,
+    ).first()
 
-    the_episode = db.query(models.DocumentsEpisodes).where(models.DocumentsEpisodes.Id == episodes_id).first()
-    if document_id == the_episode.DocumentId:
-        the_document = db.query(models.Document).where(models.Document.Id == document_id).first()
-        try:
-            path = make_path(the_document.DirectoryName, is_file=False)
+    if not the_document or not the_episode:
+        raise HTTPException(404, "document or episode not found!")
 
-            audio_file = make_path(path, the_episode.File, is_file=True)
-            storage_delete_file(audio_file, Buckets.DOCUMENT_BUCKET_NAME)
-
-            preview_path = make_path(path, DocumentQualities.preview, the_episode.File, is_file=True)
-            storage_delete_file(preview_path, Buckets.DOCUMENT_BUCKET_NAME)
-
-            for i in DocumentQualities.directories():
-                p = make_path(path, i, the_episode.File, is_file=True)
-                storage_delete_file(p, Buckets.DOCUMENT_BUCKET_NAME)
-
-            imageFile = make_path(path, the_episode.Image, is_file=True)
-            storage_delete_file(imageFile, Buckets.DOCUMENT_BUCKET_NAME)
-        except Exception as ex:
-            print(ex)
-        else:
-            db.delete(the_episode)
-            db.commit()
-
-            return ResponseMessage(error=False, message="Episode deleted!")
+    try:
+        path = make_path(the_document.DirectoryName, is_file=False)
+        audio_file = make_path(path, the_episode.File, is_file=True)
+        storage_delete_file(audio_file, Buckets.DOCUMENT_BUCKET_NAME)
+        preview_path = make_path(path, DocumentQualities.preview, the_episode.File, is_file=True)
+        storage_delete_file(preview_path, Buckets.DOCUMENT_BUCKET_NAME)
+        for i in DocumentQualities.directories():
+            p = make_path(path, i, the_episode.File, is_file=True)
+            storage_delete_file(p, Buckets.DOCUMENT_BUCKET_NAME)
+        imageFile = make_path(path, the_episode.Image, is_file=True)
+        storage_delete_file(imageFile, Buckets.DOCUMENT_BUCKET_NAME)
+    except Exception as ex:
+        print(ex)
+        raise HTTPException(500, "unable to delete the episode completely!")
+    else:
+        db.delete(the_episode)
+        db.commit()
+        return ResponseMessage(error=False, message="episode deleted")

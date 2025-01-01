@@ -34,10 +34,11 @@ def storage_delete_folder(path: str, bucket_name: str):
     get_bucket(bucket_name).objects.filter(Prefix=path).delete()
 
 
-def storage_delete_file(path: str, bucket_name: str):
+def storage_delete_file(path: str, bucket_name: str) -> bool:
     try:
         storage.head_object(Bucket=bucket_name, Key=path)
         storage.delete_object(Bucket=bucket_name, Key=path)
         return True
     except Exception as ex:
+        print(ex)
         return False

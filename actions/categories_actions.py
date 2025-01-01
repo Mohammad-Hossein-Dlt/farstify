@@ -1,3 +1,5 @@
+from fastapi import HTTPException
+
 import models
 from pydantic import BaseModel
 from constants import ContentTypes
@@ -17,7 +19,10 @@ class CategoryData(BaseModel):
     OrderBy: int | None = None
 
 
-def category_data(category: models.Categories) -> CategoryData:
+def category_data(
+        category: models.Categories
+) -> CategoryData:
+    
     data = CategoryData()
     data.Id = category.Id
     data.ParentId = category.ParentId
@@ -39,16 +44,24 @@ async def get_child_to_parent(
 ):
     result = []
     category_type = ""
-    this = db.query(models.Categories).where(models.Categories.Id == category_id).first()
-    if this is not None:
-        result.append(category_data(this))
+    this = db.query(
+        models.Categories
+    ).where(
+        models.Categories.Id == category_id
+    ).first()
+
+    if not this:
+        raise HTTPException(403, "category not found!")
+
     if len(result) != 0 and result.__contains__(None) == False:
         while result[-1].ParentId is not None:
-
-            this = db.query(models.Categories).where(
+            this = db.query(
+                models.Categories
+            ).where(
                 models.Categories.Id == result[-1].ParentId
             ).first()
-
+            if not this:
+                raise HTTPException(403, "category not found!")
             result.append(category_data(this))
         else:
             category_type = result[-1].Type
@@ -64,16 +77,18 @@ async def get_parent_to_child_ids(
         category_id: int,
 ):
     result = []
-
     def get_ids(the_id: int):
         result.append(the_id)
-        parent = db.query(models.Categories).where(
+        parent = db.query(
+            models.Categories
+        ).where(
             models.Categories.ParentId == the_id
         ).order_by(
             models.Categories.OrderBy.is_(None),
             models.Categories.OrderBy.asc()
         ).all()
-        if parent.__contains__(None) == False:
+
+        if not parent.__contains__(None):
             for i in parent:
                 get_ids(i.Id)
 

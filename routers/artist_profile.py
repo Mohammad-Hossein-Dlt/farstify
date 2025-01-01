@@ -1,27 +1,58 @@
+import models
 from access_token import optional_user_token_dependency
 from db_dependency import db_dependency
-from fastapi import APIRouter, status
-from constants import ContentTypes, OrderBy
+from fastapi import APIRouter, status, HTTPException
+from constants import OrderBy
 from utills.check_follow import artist_follow
 from actions.artist_actions import (
-    fetch_profile,
     best_documents,
     best_episodes,
     fetch_all_artist_documents,
     fetch_artist_appears_on_documents,
-    fetch_artist_appears_on_episodes, ArtistDocumentOrder,
+    fetch_artist_appears_on_episodes,
+    ArtistDocumentsSortBy,
+    get_artist_personal_info,
+    get_artist_profile_info,
 )
 
 router = APIRouter(prefix="/artist_profile", tags=["Artist-Profile"])
 
 
-@router.get("/profile", status_code=status.HTTP_200_OK)
+@router.get("/short_info", status_code=status.HTTP_200_OK)
 async def fetch_user_profile(
         db: db_dependency,
         artist_id: int,
         access_token: optional_user_token_dependency,
 ):
-    artist_profile, artist_id = await fetch_profile(db, artist_id)
+    artist = db.query(models.Artists).where(models.Artists.Id == artist_id).first()
+
+    if not artist:
+        raise HTTPException(404, "artist not found!")
+
+    artist_profile = await get_artist_profile_info(db, artist)
+
+    if access_token.permission:
+        artist_profile.Followed = await artist_follow(db=db, user_id=access_token.user_id, artist_id=artist_id)
+
+    return artist_profile
+
+
+@router.get("/full_info", status_code=status.HTTP_200_OK)
+async def fetch_user_profile(
+        db: db_dependency,
+        artist_id: int,
+        access_token: optional_user_token_dependency,
+):
+    artist = db.query(
+        models.Artists
+    ).where(
+        models.Artists.Id == artist_id
+    ).first()
+
+    if not artist:
+        raise HTTPException(404, "artist not found!")
+
+    artist_profile = await get_artist_personal_info(db, artist)
 
     if access_token.permission:
         artist_profile.Followed = await artist_follow(db=db, user_id=access_token.user_id, artist_id=artist_id)
@@ -50,30 +81,26 @@ async def my_best_episodes(
     return await best_episodes(db, artist_id, limit, page)
 
 
-@router.get("/posts_all", status_code=status.HTTP_200_OK)
+@router.get("/all_documents", status_code=status.HTTP_200_OK)
 async def fetch_documents(
         db: db_dependency,
         artist_id: int,
-        sort: ArtistDocumentOrder,
-        singles: bool,
+        sort: ArtistDocumentsSortBy,
         limit: int,
         page: int,
         order_by: OrderBy,
-        from_type: ContentTypes | None = None,
 ):
     return await fetch_all_artist_documents(
         db=db,
         artist_id=artist_id,
         sort=sort,
-        singles=singles,
         limit=limit,
         page=page,
         order_by=order_by,
-        from_type=from_type,
     )
 
 
-@router.get("/contributed-posts", status_code=status.HTTP_200_OK)
+@router.get("/contributed_documents", status_code=status.HTTP_200_OK)
 async def fetch_documents(
         db: db_dependency,
         artist_id: int,
@@ -90,7 +117,7 @@ async def fetch_documents(
     )
 
 
-@router.get("/contributed-episodes", status_code=status.HTTP_200_OK)
+@router.get("/contributed_episodes", status_code=status.HTTP_200_OK)
 async def fetch_documents(
         db: db_dependency,
         artist_id: int,

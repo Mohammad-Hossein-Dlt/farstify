@@ -11,7 +11,7 @@ class SingleUserProfileData(BaseModel):
     ProfileImageUrl: str | None = None
 
 
-async def user_profile_data(user: models.Users) -> SingleUserProfileData:
+def user_profile_data(user: models.Users) -> SingleUserProfileData:
     data = SingleUserProfileData()
     data.UserName = user.UserName
     data.Name = user.Name
@@ -19,4 +19,5 @@ async def user_profile_data(user: models.Users) -> SingleUserProfileData:
         bucket_name=Buckets.USER_BUCKET_NAME,
         path=make_path(user.DirectoryName, user.ProfileImage, is_file=True),
     ) if user.ProfileImage else None
+
     return data

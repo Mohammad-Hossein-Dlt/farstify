@@ -1,7 +1,6 @@
 from typing import Annotated
 from fastapi import HTTPException, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-# from jose import jwt, JWTError
 import jwt
 from jwt import InvalidTokenError
 from pydantic import BaseModel
@@ -36,7 +35,6 @@ def create_access_token(data: dict):
 
 def decode_access_token(encoded_token: str, empty_data: bool = False) -> TokenData:
     try:
-        print("nnn")
         payload = jwt.decode(encoded_token, SECRET_KEY, algorithms=[ALGORITHM])
         user_name: str = payload.get("username")
         user_id: int = payload.get("id")

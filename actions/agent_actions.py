@@ -1,103 +1,247 @@
+from fastapi import HTTPException
 from pydantic import BaseModel
 from actions.artist_short_info_actions import ArtistShortInfo, get_artist_short_info
+from actions.response_model import ResponseMessage
 from db_dependency import db_dependency
-from models import Agents, Artists
+import models
 from typing import List, Dict
 from constants import AgentRolesEntities
 
 
 class AgentViewMode(BaseModel):
-    id: int | None = None
-    name: str | None = None
-    profile: ArtistShortInfo | None = None
-    is_main: bool = False
-    order: int | None = None
+    Agent_Id: int | None = None
+    Role_Id: int | None = None
+    Profile: ArtistShortInfo | None = None
+    Name: str | None = None
+    Is_Main: bool = False
+    Order: int | None = None
+
+
+async def add_new_agent(
+        db: db_dependency,
+        episode_id: int,
+        artist_id: str | None = None,
+        name: str | None = None,
+        is_main: bool = False,
+):
+    params = [artist_id, name]
+    given_params = sum(p is not None for p in params)
+
+    if given_params > 1:
+        raise HTTPException(403, "only one entity (artist_id or name) must be given")
+    elif given_params == 0:
+        raise HTTPException(403, "one entity (artist_id or name) must be given")
+
+    agent = db.query(
+        models.Agents,
+    ).where(
+        models.Agents.EpisodeId == episode_id,
+        models.Agents.ArtistId == artist_id,
+        models.Agents.Name == name,
+    ).first()
+
+    if agent:
+        raise HTTPException(403, "agent already exists!")
+
+    episode, document = db.query(
+        models.DocumentsEpisodes,
+        models.Document
+    ).join(
+        models.Document
+    ).where(
+        models.DocumentsEpisodes.Id == episode_id
+    ).first()
+
+    if not document or not episode:
+        raise HTTPException(404, "document or episode not found!")
+
+    artist = db.query(models.Artists).where(models.Artists.Id == artist_id).first()
+
+    if given_params == 0 or (artist and artist.Id == artist_id):
+        agent_artist_id = artist.Id
+    elif not name and artist:
+        agent_artist_id = artist.Id
+    else:
+        agent_artist_id = None
+
+    agent = models.Agents()
+
+    agent.EpisodeId = episode.Id
+    agent.ArtistId = agent_artist_id
+    agent.Name = name.strip() if name else None
+    agent.IsMain = is_main
+
+    db.add(agent)
+    db.commit()
+
+    return {'Agent_Id': agent.Id}
+
+
+async def edit_agent(
+        db: db_dependency,
+        agent_id: str,
+        artist_id: str | None = None,
+        name: str | None = None,
+        is_main: bool = None,
+):
+    params = [artist_id, name]
+    given_params = sum(p is not None for p in params)
+
+    if given_params > 1:
+        raise HTTPException(403, "only one entity (artist_id or name) must be given")
+    elif given_params == 0:
+        raise HTTPException(403, "one entity (artist_id or name) must be given")
+
+    name = name.strip() if name else None
+
+    agent = db.query(
+        models.Agents
+    ).where(
+        models.Agents.Id == agent_id,
+    ).first()
+
+    if not agent:
+        raise HTTPException(404, "agent not found!")
+
+    response = ResponseMessage(error=False, message=f"agent edited.")
+
+    if agent:
+
+        agent.IsMain = is_main if is_main is not None else agent.IsMain
+
+        if name and agent.Name:
+
+            old_name = agent.Name
+
+            agent.Name = name
+            response = ResponseMessage(error=False, message=f"agent '{old_name}' renamed to '{name}'.")
+
+        elif artist_id and agent.ArtistId:
+
+            new_artist = db.query(
+                models.Artists
+            ).where(
+                models.Artists.Id == artist_id,
+            ).first()
+
+            if not new_artist:
+                raise HTTPException(404, "new artist not found!")
+
+            agent.ArtistId = artist_id
+
+            response = ResponseMessage(error=False, message=f"new artist replaced the previous artist")
+
+        elif artist_id and agent.Name:
+
+            new_artist = db.query(
+                models.Artists
+            ).where(
+                models.Artists.Id == artist_id,
+            ).first()
+
+            if not new_artist:
+                raise HTTPException(404, "new artist not found!")
+
+            agent.Name = None
+            agent.ArtistId = new_artist.Id
+
+        elif name and agent.ArtistId:
+
+            agent.ArtistId = None
+            agent.Name = name
+
+        db.commit()
+
+    return {'Agent_Id': agent.Id}
 
 
 async def agent_view_model(
         db: db_dependency,
-        agent: Agents,
+        agent: models.Agents,
+        role: models.AgentRoles | None = None,
 ) -> AgentViewMode:
-    data = AgentViewMode()
-    data.id = agent.Id
-    data.name = agent.Name
-    if agent.ArtistId:
-        artist = db.query(Artists).where(Artists.Id == agent.ArtistId).first()
-        data.profile = get_artist_short_info(artist)
-        data.name = artist.Name
 
-    data.is_main = agent.IsMain
-    data.order = agent.OrderBy
+    data = AgentViewMode()
+    data.Agent_Id = agent.Id
+
+    if agent.ArtistId:
+
+        artist = db.query(
+            models.Artists
+        ).where(
+            models.Artists.Id == agent.ArtistId
+        ).first()
+
+        if not artist:
+            raise HTTPException(404, "artist not found!")
+
+        data.Profile = get_artist_short_info(artist)
+
+    elif agent.Name:
+
+        data.Name = agent.Name
+
+    if role:
+        data.Role_Id = role.Id
+
+    data.Is_Main = agent.IsMain
+    data.Order = agent.OrderBy
 
     return data
 
 
 async def get_main_agent(
         db: db_dependency,
-        artist_list: List[Agents],
+        episode_id: int,
 ):
-    roles = [AgentRolesEntities.Main_Artist, AgentRolesEntities.Featured_Artist]
 
-    main_agents: List = list()
+    agents = db.query(
+        models.Agents
+    ).where(
+        models.Agents.EpisodeId == episode_id,
+    ).order_by(
+        models.Agents.OrderBy.asc().nullslast(),
+        models.Agents.Id.asc(),
+    ).all()
 
-    for agent in artist_list:
+    main_agents: List = []
+
+    for agent in agents:
         new_agent = await agent_view_model(db, agent)
         if agent.IsMain:
-            agent_roles = [i.Role for i in agent.roles if i.Role in roles]
-            main_agents.append([new_agent, agent_roles])
-
+            main_agents.append(new_agent)
     return main_agents
 
 
 async def get_agent_with_roles(
         db: db_dependency,
-        artist_list: List[Agents],
+        episode_id: int,
 ):
-    main_agents: List = list()
-    given_role_agents: Dict[str, list] = dict()
-
-    for agent in artist_list:
-        new_agent = await agent_view_model(db, agent)
-        if agent.IsMain:
-            agent_roles = [i.Role for i in agent.roles]
-            main_agents.append([new_agent, agent_roles])
+    main_agents: List = await get_main_agent(db=db, episode_id=episode_id)
+    agents_with_assigned_roles: Dict[str, list] = dict()
 
     for role in AgentRolesEntities:
-        agents_with_i_role: List[AgentViewMode] = list()
-        for agent in artist_list:
-            agent_roles = {i.Role: i.OrderBy for i in agent.roles}
-            if agent_roles.keys().__contains__(role):
-                new_agent = await agent_view_model(db, agent)
-                order = agent_roles.get(role)
-                new_agent.order = order
-                agents_with_i_role.append(new_agent)
 
-        null_orders: List[AgentViewMode] = list()
-        none_null_orders: List[AgentViewMode] = list()
-        for i in agents_with_i_role:
-            if i.order is None:
-                null_orders.append(i)
-            else:
-                none_null_orders.append(i)
+        agents = db.query(
+            models.Agents,
+            models.AgentRoles,
+        ).join(
+            models.AgentRoles,
+        ).where(
+            models.Agents.EpisodeId == episode_id,
+            models.AgentRoles.Role == role,
+        ).order_by(
+            models.AgentRoles.OrderBy.asc().nullslast(),
+            models.AgentRoles.Id.asc(),
+        ).all()
 
-        for index in range(len(none_null_orders)):
-            min_index = index
-            for j in range(index + 1, len(none_null_orders)):
-                a = none_null_orders[j].order
-                b = none_null_orders[min_index].order
-                if (a is not None and b is not None) and (a < b):
-                    min_index = j
-            none_null_orders[min_index], none_null_orders[index] = none_null_orders[index], none_null_orders[min_index]
+        result = []
 
-        for index in range(len(null_orders)):
-            min_index = index
-            for j in range(index + 1, len(null_orders)):
-                a = null_orders[j].id
-                b = null_orders[min_index].id
-                if (a is not None and b is not None) and (a < b):
-                    min_index = j
-            null_orders[min_index], null_orders[index] = null_orders[index], null_orders[min_index]
+        for agent, agent_role in agents:
+            x = await agent_view_model(db=db, agent=agent, role=agent_role)
+            x.Order = agent_role.OrderBy
+            result.append(x)
 
-        given_role_agents.update({role: [*none_null_orders, *null_orders]})
+        agents_with_assigned_roles.update({role: result})
 
-    return main_agents, given_role_agents
+    return main_agents, agents_with_assigned_roles

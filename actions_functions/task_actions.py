@@ -8,14 +8,14 @@ import models
 
 
 def add_processing_task(
-        artist_id: int,
         episode_id: int,
 ) -> int:
     db = sessionLocal()
 
-    check = db.query(models.Task).where(
+    check = db.query(
+        models.Task
+    ).where(
         and_(
-            models.Task.ArtistId == artist_id,
             models.Task.EpisodeId == episode_id,
             or_(
                 models.Task.ActionState == ProcessActionTaskState.launching,
@@ -23,9 +23,9 @@ def add_processing_task(
             ),
         ),
     ).first()
+
     if not check:
         new_task = models.Task()
-        new_task.ArtistId = artist_id
         new_task.EpisodeId = episode_id
         new_task.ActionState = ProcessActionTaskState.launching
 
@@ -39,7 +39,6 @@ def add_processing_task(
     else:
         db.close()
         raise HTTPException(403, "previous upload is in processing")
-        # return None
 
 
 def update_task(
@@ -48,7 +47,9 @@ def update_task(
 ) -> int:
     db = sessionLocal()
 
-    task = db.query(models.Task).where(
+    task = db.query(
+        models.Task
+    ).where(
         models.Task.Id == task_id,
     ).first()
 
@@ -62,18 +63,17 @@ def update_task(
     else:
         db.close()
         raise HTTPException(403, "no task exist")
-        # return None
 
 
 async def check_task_in_process(
-        artist_id: int,
         episode_id: int,
 ) -> bool:
     db = sessionLocal()
 
-    task = db.query(models.Task).where(
+    task = db.query(
+        models.Task
+    ).where(
         and_(
-            models.Task.ArtistId == artist_id,
             models.Task.EpisodeId == episode_id,
             or_(
                 models.Task.ActionState == ProcessActionTaskState.launching,
@@ -88,12 +88,14 @@ async def check_task_in_process(
     return False
 
 
-async def cancel_tasks():
+def cancel_tasks():
     time_period = datetime.now() - timedelta(minutes=30)
 
     db = sessionLocal()
 
-    tasks = db.query(models.Task).where(
+    tasks = db.query(
+        models.Task
+    ).where(
         and_(
             models.Task.CreationDate < time_period,
             or_(
@@ -111,12 +113,14 @@ async def cancel_tasks():
     db.close()
 
 
-def remove_all_tasks_by_artist(
+def remove_all_tasks(
         db: db_dependency,
-        artist_id: int,
+        episode_id: int,
 ):
-    tasks = db.query(models.Task).where(
-        models.Task.ArtistId == artist_id,
+    tasks = db.query(
+        models.Task
+    ).where(
+        models.Task.EpisodeId == episode_id,
     ).all()
 
     for i in tasks:
@@ -125,14 +129,14 @@ def remove_all_tasks_by_artist(
     db.commit()
 
 
-def remove_single_task_by_artist(
+def remove_single_task(
         db: db_dependency,
-        artist_id: int,
         task_id: int,
 ):
-    task = db.query(models.Task).where(
+    task = db.query(
+        models.Task
+    ).where(
         models.Task.Id == task_id,
-        models.Task.ArtistId == artist_id,
     ).first()
 
     db.delete(task)

@@ -13,16 +13,11 @@ class ProcessActionTaskState(str, enum.Enum):
 
 class Directories(str, enum.Enum):
     temp = "temp/"
-    # documents = "documents-data/"
-    # users = "users-data/"
-    # categories = "categories-images/"
 
 
 class DocumentQualities(str, enum.Enum):
     q64k_bit = "64k"
-    # _96k_bit = "96k"
     q128k_bit = "128k"
-    # _160k_bit = "160k"
     q256k_bit = "256k"
     q320k_bit = "320k"
     preview = "preview"
@@ -31,9 +26,7 @@ class DocumentQualities(str, enum.Enum):
     def directories(cls):
         return [
             cls.q64k_bit,
-            # cls._96k_bit,
             cls.q128k_bit,
-            # cls._160k_bit,
             cls.q256k_bit,
             cls.q320k_bit,
             cls.preview,
@@ -46,8 +39,8 @@ class DocumentQualities(str, enum.Enum):
 
 
 class AgentRolesEntities(str, enum.Enum):
-    Main_Artist = "Main Artist"
-    Featured_Artist = "Featured Artist"
+    Main_Artist = "Main_Artist"
+    Featured_Artist = "Featured_Artist"
     Producer = "Producer"
     Composer = "Composer"
     Writer = "Writer"

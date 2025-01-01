@@ -18,7 +18,7 @@ from actions.user_actions import user_profile_data
 from actions.artist_short_info_actions import get_artist_short_info
 from actions.document_actions import get_document_short_info
 from actions.episode_actions import get_episode_short_info
-from actions.playlist_actions import get_playlist_short_info, get_playlist_full_info
+from actions.playlist_actions import get_playlist_short_info
 
 router = APIRouter(prefix="/user", tags=["User"])
 
@@ -43,27 +43,36 @@ async def verify_user(
         db: db_dependency,
         access_token: token_dependency,
 ):
-    user = db.query(models.Users).where(models.Users.UserName == access_token.user_name).first()
+    user = db.query(
+        models.Users
+    ).where(
+        models.Users.UserName == access_token.user_name
+    ).first()
 
     if not user:
         raise HTTPException(404, "an error occurred!")
 
-    return await user_profile_data(user)
+    return user_profile_data(user)
 
 
-@router.post("/sign-up", status_code=status.HTTP_201_CREATED)
+@router.post("/sign_up", status_code=status.HTTP_201_CREATED)
 async def sign_up_action(
         db: db_dependency,
         sign_up: SignUp,
 ):
-    check = db.query(models.Users).where(models.Users.Phone == sign_up.Phone).first()
+    check = db.query(
+        models.Users
+    ).where(
+        models.Users.Phone == sign_up.Phone
+    ).first()
 
-    verify_code = db.query(models.UsersTemp).where(
+    verify_code = db.query(
+        models.UsersTemp
+    ).where(
         and_(
             models.UsersTemp.Phone == sign_up.Phone,
             models.UsersTemp.VerifyCode == sign_up.VerifyCode
         )
-
     ).first()
 
     verify_code = True
@@ -89,19 +98,23 @@ async def sign_up_action(
     return ResponseMessage(error=False, message="User has been signed up!")
 
 
-@router.post("/sign-in", status_code=status.HTTP_201_CREATED)
+@router.post("/sign_in", status_code=status.HTTP_201_CREATED)
 async def sign_in(
         db: db_dependency,
         form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
 ):
-    check = db.query(models.Users).where(
+    check = db.query(
+        models.Users
+    ).where(
         or_(
             models.Users.Phone == form_data.username,
             models.Users.UserName == form_data.username,
         )
     ).first()
 
-    verify_code = db.query(models.UsersTemp).where(
+    verify_code = db.query(
+        models.UsersTemp
+    ).where(
         and_(
             models.UsersTemp.Phone == form_data.username,
         )
@@ -124,14 +137,18 @@ async def sign_in(
         raise HTTPException(403, "Incorrect password or verified")
 
 
-@router.post("/change-profile-image", status_code=status.HTTP_201_CREATED)
+@router.post("/change_profile_image", status_code=status.HTTP_201_CREATED)
 async def change_profile_image(
         db: db_dependency,
         access_token: user_token_dependency,
         image_file: UploadFile = File(None),
         delete_image: bool = False,
 ):
-    user = db.query(models.Users).where(models.Users.Id == access_token.user_id).first()
+    user = db.query(
+        models.Users
+    ).where(
+        models.Users.Id == access_token.user_id
+    ).first()
 
     main_path = make_path(user.DirectoryName, is_file=False)
 
@@ -161,14 +178,19 @@ async def change_profile_image(
     return ResponseMessage(error=False, message="User profile image has been changed!")
 
 
-@router.put("/edit-profile", status_code=status.HTTP_201_CREATED)
+@router.put("/edit_profile", status_code=status.HTTP_201_CREATED)
 async def edit_profile(
         db: db_dependency,
         access_token: user_token_dependency,
         name: str | None = None,
         email: str | None = None,
 ):
-    user = db.query(models.Users).where(models.Users.Id == access_token.user_id).first()
+    user = db.query(
+        models.Users
+    ).where(
+        models.Users.Id == access_token.user_id
+    ).first()
+
     user.Name = name.strip() if name else user.Name
     user.Email = email.strip() if email else user.Email
 
@@ -176,7 +198,7 @@ async def edit_profile(
     return ResponseMessage(error=False, message="User profile has been changed!")
 
 
-@router.put("/change-username", status_code=status.HTTP_201_CREATED)
+@router.put("/change_username", status_code=status.HTTP_201_CREATED)
 async def change_username(
         db: db_dependency,
         access_token: user_token_dependency,
@@ -184,7 +206,11 @@ async def change_username(
 ):
     username = username.strip()
 
-    user = db.query(models.Users).where(models.Users.Id == access_token.user_id).first()
+    user = db.query(
+        models.Users
+    ).where(
+        models.Users.Id == access_token.user_id
+    ).first()
 
     if user and check_username(username=username):
         if await uniq_user_name(db, username):
@@ -195,23 +221,32 @@ async def change_username(
             raise HTTPException(403, f"the username {username} is not available")
 
 
-@router.put("/change-password", status_code=status.HTTP_201_CREATED)
+@router.put("/change_password", status_code=status.HTTP_201_CREATED)
 async def change_password(
         db: db_dependency,
         access_token: user_token_dependency,
         password: str,
         newpassword: str,
 ):
-    user = db.query(models.Users).where(models.Users.Id == access_token.user_id).first()
+    user = db.query(
+        models.Users
+    ).where(
+        models.Users.Id == access_token.user_id
+    ).first()
+
     if user is None:
         raise HTTPException(403, "You are not signed up")
-    verify_code = db.query(models.UsersTemp).where(
+
+    verify_code = db.query(
+        models.UsersTemp
+    ).where(
         and_(
             models.UsersTemp.Phone == user.Phone,
             models.UsersTemp.VerifyCode == password
         )
 
     ).first()
+
     if user and (pwd_context.verify(password, user.Password) or verify_code):
         user.Password = pwd_context.hash(newpassword.strip())
         db.commit()
@@ -224,7 +259,7 @@ async def change_password(
         raise HTTPException(403, "You are not verified")
 
 
-@router.put("/change-phone", status_code=status.HTTP_201_CREATED)
+@router.put("/change_phone", status_code=status.HTTP_201_CREATED)
 async def change_phone(
         db: db_dependency,
         access_token: user_token_dependency,
@@ -233,18 +268,28 @@ async def change_phone(
 ):
     new_phone = new_phone.strip()
 
-    new_phone_exists = db.query(models.Users).where(models.Users.Phone == new_phone).first()
+    new_phone_exists = db.query(
+        models.Users
+    ).where(
+        models.Users.Phone == new_phone
+    ).first()
 
-    user = db.query(models.Users).where(models.Users.Id == access_token.user_id).first()
+    user = db.query(
+        models.Users
+    ).where(
+        models.Users.Id == access_token.user_id
+    ).first()
+
     if not user:
         raise HTTPException(403, "You are not signed up")
 
-    verify_code = db.query(models.UsersTemp).where(
+    verify_code = db.query(
+        models.UsersTemp
+    ).where(
         and_(
             models.UsersTemp.Phone == new_phone,
             models.UsersTemp.VerifyCode == verifycode
         )
-
     ).first()
 
     if new_phone_exists is None and verify_code:
@@ -257,7 +302,7 @@ async def change_phone(
         raise HTTPException(403, "Your new phone not verified")
 
 
-@router.post("/create-playlist", status_code=status.HTTP_201_CREATED)
+@router.post("/create_playlist", status_code=status.HTTP_201_CREATED)
 async def create_playlist(
         db: db_dependency,
         access_token: user_token_dependency,
@@ -279,14 +324,16 @@ async def create_playlist(
     return ResponseMessage(error=False, message="Playlist has been created!")
 
 
-@router.post("/edit-playlist", status_code=status.HTTP_201_CREATED)
+@router.post("/edit_playlist", status_code=status.HTTP_201_CREATED)
 async def edit_playlist(
         db: db_dependency,
         access_token: user_token_dependency,
         play_list_id: int,
         title: str
 ):
-    the_play_list = db.query(models.PlayList).where(
+    the_play_list = db.query(
+        models.PlayList
+    ).where(
         and_(
             models.PlayList.Id == play_list_id,
             models.PlayList.OwnerUser == access_token.user_id
@@ -307,7 +354,9 @@ async def reorder_contributors(
         play_list_id: int,
         episodes_id: List[int],
 ):
-    the_play_list = db.query(models.PlayList).where(
+    the_play_list = db.query(
+        models.PlayList
+    ).where(
         and_(
             models.PlayList.Id == play_list_id,
             models.PlayList.OwnerUser == access_token.user_id
@@ -315,7 +364,9 @@ async def reorder_contributors(
     ).first()
     if the_play_list:
         for i in episodes_id:
-            check = db.query(models.PlayListRepository).where(
+            check = db.query(
+                models.PlayListRepository
+            ).where(
                 and_(
                     models.PlayListRepository.EpisodesId == i,
                     models.PlayListRepository.PlayListId == the_play_list.Id,
@@ -328,13 +379,15 @@ async def reorder_contributors(
     return ResponseMessage(error=False, message="Contributors has been reordered!")
 
 
-@router.delete("/delete-playlist", status_code=status.HTTP_201_CREATED)
+@router.delete("/delete_playlist", status_code=status.HTTP_201_CREATED)
 async def delete_playlist(
         db: db_dependency,
         access_token: user_token_dependency,
         play_list_id: int,
 ):
-    the_play_list = db.query(models.PlayList).where(
+    the_play_list = db.query(
+        models.PlayList
+    ).where(
         and_(
             models.PlayList.Id == play_list_id,
             models.PlayList.OwnerUser == access_token.user_id,
@@ -348,14 +401,16 @@ async def delete_playlist(
     return ResponseMessage(error=False, message="Playlist has been deleted!")
 
 
-@router.post("/add-to-playlist", status_code=status.HTTP_201_CREATED)
+@router.post("/add_to_playlist", status_code=status.HTTP_201_CREATED)
 async def add_to_playlist(
         db: db_dependency,
         access_token: user_token_dependency,
         episode_id: int,
         play_list_id: int,
 ):
-    the_play_list = db.query(models.PlayList).where(
+    the_play_list = db.query(
+        models.PlayList
+    ).where(
         and_(
             models.PlayList.Id == play_list_id,
             models.PlayList.OwnerUser == access_token.user_id,
@@ -370,7 +425,9 @@ async def add_to_playlist(
         raise HTTPException(403, "No episode exist.")
     if the_play_list:
 
-        item = db.query(models.PlayListRepository).where(
+        item = db.query(
+            models.PlayListRepository
+        ).where(
             and_(
                 models.PlayListRepository.PlayListId == the_play_list.Id,
                 models.PlayListRepository.EpisodesId == episode_id,
@@ -391,7 +448,7 @@ async def add_to_playlist(
             return ResponseMessage(error=False, message="Episode has been deleted from playlist!")
 
 
-@router.get("/fetch-all-playlists", status_code=status.HTTP_201_CREATED)
+@router.get("/fetch_all_playlists", status_code=status.HTTP_201_CREATED)
 async def fetch_all_playlists(
         db: db_dependency,
         access_token: user_token_dependency,
@@ -399,26 +456,26 @@ async def fetch_all_playlists(
         page: int,
 ):
     pl = []
-    play_lists = db.query(models.PlayList).where(
+    play_lists = db.query(
+        models.PlayList
+    ).where(
         models.PlayList.OwnerUser == access_token.user_id
-    ).limit(limit).offset(limit * page).all()
+    ).limit(
+        limit
+    ).offset(
+        limit * page
+    ).all()
 
     if play_lists.__contains__(None):
         play_lists = []
 
     for i in play_lists:
         pl.append(await get_playlist_short_info(db=db, playlist=i))
-        # first_ep = db.query(models.DocumentsEpisodes).select_from(models.PlayListRepository).where(
-        #     models.PlayListRepository.PlayListId == i.Id
-        # ).first()
-        # document = db.query(models.Document).where(models.Document.Id == first_ep.DocumentId).first()
-        # i.directory = document.DirectoryName
-        # i.Image = first_ep.Image if first_ep.Image is not None else document.MainImage
 
     return pl
 
 
-@router.get("/fetch-playlist_episodes", status_code=status.HTTP_201_CREATED)
+@router.get("/fetch_playlist_episodes", status_code=status.HTTP_201_CREATED)
 async def fetch_playlist_episodes(
         db: db_dependency,
         play_list_id: int,
@@ -427,7 +484,11 @@ async def fetch_playlist_episodes(
 
     result = []
 
-    episodes = db.query(models.PlayListRepository, models.DocumentsEpisodes, models.Document).join(
+    episodes = db.query(
+        models.PlayListRepository,
+        models.DocumentsEpisodes,
+        models.Document
+    ).join(
         models.DocumentsEpisodes,
         models.PlayListRepository.EpisodesId == models.DocumentsEpisodes.Id,
         isouter=True
@@ -450,34 +511,24 @@ async def fetch_playlist_episodes(
     return result
 
 
-@router.put("/like-episode", status_code=status.HTTP_201_CREATED)
+@router.put("/like_episode", status_code=status.HTTP_201_CREATED)
 async def like_episode(
         db: db_dependency,
         access_token: user_token_dependency,
         episode_id: int,
 ):
-    episode, document = db.query(models.DocumentsEpisodes, models.Document).join(
+    episode, document = db.query(
+        models.DocumentsEpisodes,
+        models.Document
+    ).join(
         models.Document
     ).where(
         models.DocumentsEpisodes.Id == episode_id
     ).first()
 
-    # like = like_episode_mongo(
-    #     History(
-    #         userId=accessToken.id_,
-    #         artistId=document.Owner,
-    #         documentId=episode.DocumentId,
-    #         episodeId=episode.Id,
-    #         contentType=document.ContentType
-    #     )
-    # )
-    #
-    # if like:
-    #     return ResponseMessage(error=False, message="Ok. you liked this content.")
-    # else:
-    #     return ResponseMessage(error=False, message="Ok. your like has been removed.")
-
-    check = db.query(models.UserLikes).where(
+    check = db.query(
+        models.UserLikes
+    ).where(
         and_(
             models.UserLikes.UserId == access_token.user_id,
             models.UserLikes.DocumentId == episode.DocumentId,
@@ -496,7 +547,7 @@ async def like_episode(
         return ResponseMessage(error=False, message="Ok. your like has been removed.")
 
 
-@router.get("/fetch-likes", status_code=status.HTTP_200_OK)
+@router.get("/fetch_likes", status_code=status.HTTP_200_OK)
 async def fetch_likes(
         db: db_dependency,
         access_token: user_token_dependency,
@@ -505,35 +556,12 @@ async def fetch_likes(
         content_types: ContentTypes,
 ):
     result = []
-    #
-    # ids = get_likes_by_type(userId=accessToken.id_, contentType=contentType, limit=limit, page=page, order=orderBy)
-    #
-    # order_case = case({id_: index for index, id_ in enumerate(ids)}, value=models.DocumentsEpisodes.Id)
-    #
-    # likes = db.query(models.DocumentsEpisodes, models.Document).join(
-    #     models.Document
-    # ).where(
-    #     models.DocumentsEpisodes.Id.in_(ids),
-    # ).order_by(
-    #     order_case,
-    # ).all()
-    #
-    # if not likes or likes.__contains__(None):
-    #     return []
-    #
-    # for i in likes:
-    #     result.append(await episode_data(db=db, episode=i[0], document=i[1]))
 
-    # docs = db.query(models.DocumentsEpisodes, models.Document).select_from(models.UserLikes).filter(
-    #     and_(
-    #         models.UserLikes.UserId == accessToken.id_,
-    #         models.Document.ContentType == contentType,
-    #     )
-    # ).order_by(
-    #     desc(models.UserLikes.Id) if orderBy is OrderBy.desc else asc(models.UserLikes.Id)
-    # ).limit(limit).offset(limit * page).all()
-
-    docs = db.query(models.UserLikes, models.DocumentsEpisodes, models.Document).select_from(models.UserLikes).join(
+    docs = db.query(
+        models.UserLikes,
+        models.DocumentsEpisodes,
+        models.Document
+    ).select_from(models.UserLikes).join(
         models.DocumentsEpisodes,
     ).join(
         models.Document,
@@ -542,7 +570,11 @@ async def fetch_likes(
         models.Document.ContentType == content_types,
     ).order_by(
         desc(models.UserLikes.Id) if order_by is OrderBy.desc else asc(models.UserLikes.Id)
-    ).limit(limit).offset(limit * page).all()
+    ).limit(
+        limit
+    ).offset(
+        limit * page
+    ).all()
 
     for _, episode, document in docs:
         result.append(await get_episode_short_info(db=db, episode=episode, document=document))
@@ -565,7 +597,9 @@ async def follow(
     if given_params_num != 1:
         raise HTTPException(403, "only one entity must be given")
 
-    check = db.query(models.UserFollowing).where(
+    check = db.query(
+        models.UserFollowing
+    ).where(
         and_(
             models.UserFollowing.ArtistId == artist_id,
             models.UserFollowing.DocumentId == document_id,
@@ -606,7 +640,12 @@ async def fetch_following(
 ):
     result = []
 
-    docs = db.query(models.UserFollowing, models.Artists, models.Document, models.PlayList).join(
+    docs = db.query(
+        models.UserFollowing,
+        models.Artists,
+        models.Document,
+        models.PlayList
+    ).join(
         models.Artists,
         models.UserFollowing.ArtistId == models.Artists.Id,
         isouter=True,
@@ -622,7 +661,11 @@ async def fetch_following(
         models.UserFollowing.UserId == access_token.user_id
     ).order_by(
         desc(models.UserFollowing.Id) if order_by is OrderBy.desc else asc(models.UserFollowing.Id)
-    ).limit(limit).offset(limit * page).all()
+    ).limit(
+        limit
+    ).offset(
+        limit * page
+    ).all()
 
     for _, artist, document, playlist in docs:
         if artist:
@@ -635,50 +678,3 @@ async def fetch_following(
             result.append({"type": "playlistId", "data": await get_playlist_short_info(db, playlist)})
 
     return result
-
-# @router.put("/follow", status_code=status.HTTP_200_OK)
-# async def follow(
-#         db: db_dependency,
-#         accessToken: token_dependency,
-#         follow_entity_type: FollowEntities,
-#         follow_id: int
-# ):
-#     new_following = add_following(
-#         follow_action=FollowAction(
-#             userId=accessToken.id_,
-#             follow_entity_type=follow_entity_type,
-#             follow_id=follow_id,
-#         ),
-#     )
-#
-#     if new_following:
-#         return ResponseMessage(error=False, message="your following has been added.")
-#     else:
-#         return ResponseMessage(error=False, message="Ok. your following has been removed.")
-
-#
-# @router.get("/fetch_following", status_code=status.HTTP_200_OK)
-# async def fetch_following(
-#         db: db_dependency,
-#         accessToken: token_dependency,
-#         limit: int,
-#         page: int,
-#         orderBy: OrderBy,
-# ):
-#     result = []
-#     ids = get_following(userId=accessToken.id_, page=page, limit=limit)
-#
-#     for follow_item in ids:
-#         if follow_item.follow_entity_type == FollowEntities.artist:
-#             artist = db.query(models.Artists).where(models.Artists.Id == follow_item.follow_id).first()
-#             result.append({"type": "artist", "data": await simple_artist_profile_data(artist)})
-#
-#         if follow_item.follow_entity_type == FollowEntities.document:
-#             document = db.query(models.Document).where(models.Document.Id == follow_item.follow_id).first()
-#             result.append({"type": "document", "data": await document_data(db=db, document=document, onList=True)})
-#
-#         if follow_item.follow_entity_type == FollowEntities.playlist:
-#             playlist = db.query(models.PlayList).where(models.PlayList.Id == follow_item.follow_id).first()
-#             result.append({"type": "playlist", "data": await playlist_data(db=db, playlist=playlist)})
-#
-#     return result

@@ -1,5 +1,7 @@
 from db_dependency import db_dependency
-from models import Artists, Document, DocumentsEpisodes
+from models import Artists, Document, DocumentsEpisodes, DocumentsOwners
+
+from sqlalchemy import and_
 
 
 async def is_document_owned_by_artist(
@@ -7,12 +9,17 @@ async def is_document_owned_by_artist(
         artist_id: int,
         document_id: int,
 ) -> bool:
-    artist = db.query(Artists).where(
-        Artists.Id == artist_id
+    # artist = db.query(Artists).where(
+    #     Artists.Id == artist_id
+    # ).first()
+    ownership = db.query(DocumentsOwners).where(
+        and_(
+            DocumentsOwners.ArtistId == artist_id,
+            DocumentsOwners.DocumentId == document_id,
+        )
     ).first()
-    document = db.query(Document).where(Document.Id == document_id).first()
-    if document and artist:
-        return True if document.Owner == artist.Id else False
+    if ownership:
+        return True
     return False
 
 
@@ -21,9 +28,9 @@ async def is_episode_owned_by_artist(
         artist_id: int,
         episode_id: int,
 ) -> bool:
-    artist = db.query(Artists).where(
-        Artists.Id == artist_id
-    ).first()
+    # artist = db.query(Artists).where(
+    #     Artists.Id == artist_id
+    # ).first()
 
     episode, document = db.query(DocumentsEpisodes, Document).join(
         Document
@@ -31,6 +38,13 @@ async def is_episode_owned_by_artist(
         DocumentsEpisodes.Id == episode_id
     ).first()
 
-    if artist and episode and document and episode.DocumentId == document.Id:
-        return True if document.Owner == artist.Id else False
+    ownership = db.query(DocumentsOwners).where(
+        and_(
+            DocumentsOwners.ArtistId == artist_id,
+            DocumentsOwners.DocumentId == document.Id,
+        )
+    ).first()
+
+    if ownership:
+        return True
     return False

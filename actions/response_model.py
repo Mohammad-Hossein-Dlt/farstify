@@ -1,6 +1,8 @@
+from typing import Any
+
 from pydantic import BaseModel
 
 
 class ResponseMessage(BaseModel):
     error: bool = True
-    message: str = "an error occurred!"
+    message: Any = "an error occurred!"

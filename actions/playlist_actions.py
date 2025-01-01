@@ -1,3 +1,5 @@
+from fastapi import HTTPException
+
 from db_dependency import db_dependency
 from pydantic import BaseModel
 from typing import List
@@ -36,10 +38,23 @@ async def get_playlist_full_info(
         db: db_dependency,
         playlist: models.PlayList,
 ) -> PlayListFullInfo:
-    data = PlayListFullInfo()
-    user = db.query(models.Users).where(models.Users.Id == playlist.OwnerUser).first()
 
-    playlist_items = db.query(models.PlayListRepository, models.DocumentsEpisodes, models.Document).join(
+    data = PlayListFullInfo()
+
+    user = db.query(
+        models.Users
+    ).where(
+        models.Users.Id == playlist.OwnerUser
+    ).first()
+
+    if not user:
+        raise HTTPException(404, "user not found!")
+
+    playlist_items = db.query(
+        models.PlayListRepository,
+        models.DocumentsEpisodes,
+        models.Document,
+    ).join(
         models.DocumentsEpisodes,
         models.PlayListRepository.EpisodesId == models.DocumentsEpisodes.Id,
         isouter=True
@@ -51,17 +66,12 @@ async def get_playlist_full_info(
         models.PlayListRepository.PlayListId == playlist.Id
     ).all()
 
-    if playlist_items.__contains__(None):
-        playlist_items = []
-
     duration = 0
-
     images = []
     for _, episode, document in playlist_items:
         image_url = make_path(document.DirectoryName, document.MainImage, is_file=True)
-        if not images.__contains__(image_url):
+        if not images.__contains__(image_url) or not len(images) >= 4:
             images.append(image_url)
-
         duration += episode.Duration
 
     data.Images = [
@@ -70,7 +80,7 @@ async def get_playlist_full_info(
     ]
 
     data.Id = playlist.Id
-    data.Owner = await user_profile_data(user)
+    data.Owner = user_profile_data(user)
     data.Title = playlist.Title
     data.Description = playlist.Description
     data.Public = playlist.Public
@@ -88,11 +98,23 @@ async def get_playlist_short_info(
         db: db_dependency,
         playlist: models.PlayList,
 ) -> PlayListShortInfo:
+
     data = PlayListShortInfo()
 
-    user = db.query(models.Users).where(models.Users.Id == playlist.OwnerUser).first()
+    user = db.query(
+        models.Users
+    ).where(
+        models.Users.Id == playlist.OwnerUser
+    ).first()
 
-    playlist_items = db.query(models.PlayListRepository, models.DocumentsEpisodes, models.Document).join(
+    if not user:
+        raise HTTPException(404, "user not found!")
+
+    playlist_items = db.query(
+        models.PlayListRepository,
+        models.DocumentsEpisodes,
+        models.Document,
+    ).join(
         models.DocumentsEpisodes,
         models.PlayListRepository.EpisodesId == models.DocumentsEpisodes.Id,
         isouter=True
@@ -102,27 +124,25 @@ async def get_playlist_short_info(
         isouter=True
     ).where(
         models.PlayListRepository.PlayListId == playlist.Id
+    ).order_by(
+        models.PlayListRepository.Id.asc()
     ).all()
 
-    if playlist_items.__contains__(None):
-        playlist_items = []
-
     duration = 0
-
     images = []
     for _, episode, document in playlist_items:
         image_url = make_path(document.DirectoryName, document.MainImage, is_file=True)
-        if not images.__contains__(image_url):
+        if not images.__contains__(image_url) or not len(images) >= 4:
             images.append(image_url)
-
         duration += episode.Duration
 
-    data.Id = playlist.Id
-    data.User = await user_profile_data(user)
     data.Images = [
         encode_link(bucket_name=Buckets.DOCUMENT_BUCKET_NAME, path=image)
         for image in images
     ]
+
+    data.Id = playlist.Id
+    data.User = user_profile_data(user)
     data.Title = playlist.Title
     data.CreationDate = playlist.CreationDate
 

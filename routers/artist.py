@@ -2,16 +2,14 @@ import models
 import uuid
 import pathlib
 from passlib.context import CryptContext
-
 from actions.artist_short_info_actions import get_artist_short_info
-from storage import storage, Buckets, storage_delete_file
+from storage import storage, Buckets, storage_delete_file, storage_delete_folder
 from db_dependency import db_dependency
 from fastapi import APIRouter, HTTPException, status, UploadFile, File
 from pydantic import BaseModel
 from actions.response_model import ResponseMessage
 from typing import List
 from sqlalchemy import and_
-
 from utills.parse_null import pars_null
 from utills.path_manager import make_path
 from constants import ContentTypes
@@ -33,21 +31,33 @@ async def add_artist(
         limit: int,
         page: int,
 ):
-    artists = db.query(models.Artists).limit(limit).offset(limit * page).all()
+    artists = db.query(
+        models.Artists
+    ).order_by(
+        models.Artists.Id.asc()
+    ).limit(
+        limit
+    ).offset(
+        limit * page
+    ).all()
 
     return [get_artist_short_info(i) for i in artists]
 
 
-@router.post("/add_artist", status_code=status.HTTP_201_CREATED)
-async def add_artist(
+@router.post("/insert_artist", status_code=status.HTTP_201_CREATED)
+async def insert_artist(
         db: db_dependency,
         name: str,
         content_type: ContentTypes
 ):
-    check = db.query(models.Artists).where(models.Artists.Name == name).first()
+    check = db.query(
+        models.Artists
+    ).where(
+        models.Artists.Name == name
+    ).first()
 
     if check:
-        raise HTTPException(201, "artist already added!")
+        raise HTTPException(403, "artist already exists!")
 
     artist = models.Artists()
     artist.Name = name.strip()
@@ -59,10 +69,10 @@ async def add_artist(
     path = make_path(artist.DirectoryName, is_file=False)
     storage.put_object(Bucket=Buckets.USER_BUCKET_NAME, Key=path)
 
-    return ResponseMessage(error=False, message="artist has been signed up!")
+    return ResponseMessage(error=False, message="artist signed up!")
 
 
-@router.post("/change-profile-image", status_code=status.HTTP_201_CREATED)
+@router.post("/change_profile_image", status_code=status.HTTP_201_CREATED)
 async def change_profile_image(
         db: db_dependency,
         artist_id: int,
@@ -70,7 +80,11 @@ async def change_profile_image(
         delete_image: bool = False,
 
 ):
-    artist = db.query(models.Artists).where(models.Artists.Id == artist_id).first()
+    artist = db.query(
+        models.Artists
+    ).where(
+        models.Artists.Id == artist_id
+    ).first()
 
     main_path = make_path(artist.DirectoryName, is_file=False)
 
@@ -93,8 +107,8 @@ async def change_profile_image(
             try:
                 delete_image_action(artist.ProfileImage)
             except Exception as ex_1:
-                delete_image_action(file_name)
                 print(ex_1)
+                delete_image_action(file_name)
             else:
                 artist.ProfileImage = file_name
                 db.commit()
@@ -106,19 +120,24 @@ async def change_profile_image(
         else:
             artist.ProfileImage = None
             db.commit()
-    return ResponseMessage(error=False, message="artist profile image has been changed!")
+    return ResponseMessage(error=False, message="artist profile image edited!")
 
 
-@router.post("/fetch-profile-images", status_code=status.HTTP_201_CREATED)
+@router.post("/fetch_profile_images", status_code=status.HTTP_201_CREATED)
 async def change_profile_image(
         db: db_dependency,
         artist_id: int,
 ):
     result: List[ImageViewModel] = list()
 
-    artist = db.query(models.Artists).where(
+    artist = db.query(
+        models.Artists
+    ).where(
         models.Artists.Id == artist_id
     ).first()
+
+    if not artist:
+        raise HTTPException(404, "artist not found!")
 
     images = db.query(models.ArtistImages).where(
         models.ArtistImages.ArtistId == artist_id
@@ -137,13 +156,18 @@ async def change_profile_image(
 async def artist_image(
         db: db_dependency,
         artist_id: int,
-        image_file: UploadFile = File(None),
         image_id: int | None = None,
+        image_file: UploadFile = File(None),
         delete_image: bool = False,
 ):
     image_id = pars_null(image_id)
 
-    artist = db.query(models.Artists).where(models.Artists.Id == artist_id).first()
+    artist = db.query(
+        models.Artists
+    ).where(
+        models.Artists.Id == artist_id
+    ).first()
+
     main_path = make_path(artist.DirectoryName, is_file=False)
 
     def delete_image_action(image: str):
@@ -163,7 +187,9 @@ async def artist_image(
         else:
             if image_id:
 
-                artist_img = db.query(models.ArtistImages).where(
+                artist_img = db.query(
+                    models.ArtistImages
+                ).where(
                     and_(
                         models.ArtistImages.Id == image_id,
                         models.ArtistImages.ArtistId == artist_id,
@@ -189,12 +215,16 @@ async def artist_image(
             db.commit()
 
     elif not image_file and delete_image and image_id:
-        artist_img = db.query(models.ArtistImages).where(
+
+        artist_img = db.query(
+            models.ArtistImages
+        ).where(
             and_(
                 models.ArtistImages.Id == image_id,
                 models.ArtistImages.ArtistId == artist_id,
             )
         ).first()
+
         if artist_img:
             try:
                 delete_image_action(artist_img.Image)
@@ -203,7 +233,7 @@ async def artist_image(
             else:
                 db.delete(artist_img)
                 db.commit()
-    return ResponseMessage(error=False, message="artist profile image has been changed!")
+    return ResponseMessage(error=False, message="artist profile image edited!")
 
 
 @router.put("/reorder_images", status_code=status.HTTP_200_OK)
@@ -212,7 +242,9 @@ async def reorder_images(
         artist_id: int,
         images_id: List[int],
 ):
-    get_images = db.query(models.ArtistImages).where(
+    get_images = db.query(
+        models.ArtistImages
+    ).where(
         and_(
             models.ArtistImages.ArtistId == artist_id,
         )
@@ -225,7 +257,7 @@ async def reorder_images(
 
     db.commit()
 
-    return ResponseMessage(error=False, message="Links has been reordered!")
+    return ResponseMessage(error=False, message="images reordered!")
 
 
 @router.put("/edit_profile", status_code=status.HTTP_201_CREATED)
@@ -236,11 +268,19 @@ async def edit_profile(
 ):
     name = pars_null(name)
 
-    artist = db.query(models.Artists).where(models.Artists.Id == artist_id).first()
+    artist = db.query(
+        models.Artists
+    ).where(
+        models.Artists.Id == artist_id
+    ).first()
+
+    if not artist:
+        raise HTTPException(404, "artist not found!")
+
     artist.Name = name.strip() if name else artist.Name
 
     db.commit()
-    return ResponseMessage(error=False, message="User profile has been changed!")
+    return ResponseMessage(error=False, message="artist profile edited!")
 
 
 @router.put("/insert_link", status_code=status.HTTP_200_OK)
@@ -248,14 +288,16 @@ async def insert_link(
         db: db_dependency,
         artist_id: int,
         link: str,
-        title: str | None = None,
+        title: str,
         link_id: int | None = None,
 ):
-    title = pars_null(title)
     link_id = pars_null(link_id)
 
     if link_id:
-        artist_link = db.query(models.ArtistLinks).where(
+
+        artist_link = db.query(
+            models.ArtistLinks
+        ).where(
             and_(
                 models.ArtistLinks.Id == link_id,
                 models.ArtistLinks.ArtistId == artist_id,
@@ -263,13 +305,12 @@ async def insert_link(
         ).first()
 
         if not artist_link:
-            raise HTTPException(404, "an error occurred!")
+            raise HTTPException(404, "artist link not found!")
 
         artist_link.Title = title
         artist_link.Link = link
-        db.commit()
 
-        return ResponseMessage(error=False, message="Link has been updated!")
+        response = ResponseMessage(error=False, message="link updated!")
     else:
         artist_link = models.ArtistLinks()
         artist_link.Title = title
@@ -280,7 +321,10 @@ async def insert_link(
 
         db.commit()
 
-        return ResponseMessage(error=False, message="Link has been inserted!")
+        response = ResponseMessage(error=False, message="link added!")
+
+    db.commit()
+    return response
 
 
 @router.delete("/delete_link", status_code=status.HTTP_200_OK)
@@ -289,16 +333,22 @@ async def delete_link(
         artist_id: int,
         link_id: int,
 ):
-    link = db.query(models.ArtistLinks).where(
+    link = db.query(
+        models.ArtistLinks
+    ).where(
         and_(
             models.ArtistLinks.ArtistId == artist_id,
             models.ArtistLinks.Id == link_id,
         )
     ).first()
-    if link:
-        db.delete(link)
-        db.commit()
-    return ResponseMessage(error=False, message="Link has been deleted!")
+
+    if not link:
+        raise HTTPException(404, "artist link not found!")
+
+    db.delete(link)
+    db.commit()
+
+    return ResponseMessage(error=False, message="link deleted!")
 
 
 @router.put("/get_links", status_code=status.HTTP_200_OK)
@@ -306,13 +356,22 @@ async def get_link(
         db: db_dependency,
         artist_id: int,
 ):
-    links = db.query(models.ArtistLinks).where(
+    links = db.query(
+        models.ArtistLinks
+    ).where(
         models.ArtistLinks.ArtistId == artist_id,
     ).order_by(
         models.ArtistLinks.OrderBy.is_(None),
         models.ArtistLinks.OrderBy.asc()
     ).all()
-    return [{"id": x.Id, "title": x.Title, "link": x.Link} for x in links]
+
+    return [
+        {
+            "id": x.Id,
+            "title": x.Title,
+            "link": x.Link
+        } for x in links
+    ]
 
 
 @router.put("/reorder_link", status_code=status.HTTP_200_OK)
@@ -321,7 +380,9 @@ async def reorder_link(
         artist_id: int,
         links_id: List[int],
 ):
-    get_links = db.query(models.ArtistLinks).where(
+    get_links = db.query(
+        models.ArtistLinks
+    ).where(
         and_(
             models.ArtistLinks.ArtistId == artist_id,
         )
@@ -334,4 +395,42 @@ async def reorder_link(
 
     db.commit()
 
-    return ResponseMessage(error=False, message="Links has been reordered!")
+    return ResponseMessage(error=False, message="artist links reordered!")
+
+
+@router.delete("/delete_artist", status_code=status.HTTP_200_OK)
+async def reorder_link(
+        db: db_dependency,
+        artist_id: int,
+):
+    theArtist = db.query(
+        models.Artists
+    ).where(
+        models.Artists.Id == artist_id
+    ).first()
+
+    artistDocuments = db.query(
+        models.Document
+    ).where(
+        models.Document.Owner == theArtist.Id
+    ).all()
+
+    def delete_document(theDocument: models.Document):
+
+        try:
+            storage_delete_folder(theDocument.DirectoryName, Buckets.DOCUMENT_BUCKET_NAME)
+        except Exception as ex1:
+            print(ex1)
+        else:
+            db.delete(theDocument)
+            db.commit()
+    try:
+        for document in artistDocuments:
+            delete_document(document)
+        storage_delete_folder(theArtist.DirectoryName, Buckets.USER_BUCKET_NAME)
+    except Exception as ex:
+        raise HTTPException(500, "unable to delete artist completely!")
+    else:
+        db.delete(theArtist)
+        db.commit()
+        return ResponseMessage(error=False, message="artist deleted!")

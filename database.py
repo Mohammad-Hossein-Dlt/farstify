@@ -27,7 +27,7 @@ def create_directories():
 
 # ================================================================
 # DATABASE_URL = f"mariadb+mariadbconnector://{config.DB_USER}:{config.DB_PASSWORD}@{config.DB_HOST}:{config.DB_PORT}/{config.DB_NAME}"
-DATABASE_URL = f"postgresql://root:ZHqPsIiG4ZX9e29CkmEgoAY7@chogolisa.liara.cloud:30333/{config.DB_NAME}"
+DATABASE_URL = f"postgresql://{config.DB_USER}:{config.DB_PASSWORD}@{config.DB_HOST}:{config.DB_PORT}/{config.DB_NAME}"
 
 engine = create_engine(DATABASE_URL)
 

@@ -1,235 +1,248 @@
 import models
-from access_token import artist_token_dependency
 from db_dependency import db_dependency
 from fastapi import APIRouter, HTTPException, status
 from actions.response_model import ResponseMessage
-from actions.agent_actions import get_agent_with_roles
+from actions.agent_actions import add_new_agent, get_agent_with_roles, agent_view_model, edit_agent
 from typing import List
 from sqlalchemy import and_
 from constants import AgentRolesEntities
-from utills.exceptions import owned_exception
-from utills.check_ownership import is_episode_owned_by_artist
+from utills.parse_null import pars_null
 
 router = APIRouter(prefix="/agents", tags=["Agents"])
 
 
-@router.post("/add_agent", status_code=status.HTTP_200_OK)
-async def add_agent(
+@router.post("/insert_agent", status_code=status.HTTP_200_OK)
+async def insert_agent(
         db: db_dependency,
-        artist_id: int,
         episode_id: int,
-        agent_id: str | None = None,
+        agent_id: int | str | None = None,  # none or null can be given, then with pars_null function it is converted to None
+        artist_id: int | str | None = None, # none or null can be given, then with pars_null function it is converted to None
         name: str | None = None,
         is_main: bool = False,
 ):
-    params = [agent_id, name]
-    given_params = sum(p is not None for p in params)
+    agent_id = pars_null(agent_id)
+    artist_id = pars_null(artist_id)
+    name = pars_null(name)
 
-    if given_params > 1:
-        raise HTTPException(403, "only one entity must be given")
+    print(agent_id)
 
-    episode, document = db.query(models.DocumentsEpisodes, models.Document).join(
-        models.Document
-    ).where(
-        models.DocumentsEpisodes.Id == episode_id
-    ).first()
+    if agent_id and int(agent_id):
+        return await edit_agent(
+            db=db,
+            agent_id=agent_id,
+            artist_id=artist_id,
+            name=name,
+            is_main=is_main,
+        )
 
-    if not await is_episode_owned_by_artist(db, episode_id=episode.Id, artist_id=artist_id):
-        raise owned_exception
-
-    agent_artist = db.query(models.Artists).where(models.Artists.Id == agent_id).first()
-
-    if agent_id and not agent_artist:
-        raise HTTPException(403, f"artist {agent_id} not exist.")
-
-    agent_artist_id = None
-
-    if given_params == 0 or (agent_artist and agent_artist.Id == artist_id):
-        agent_artist_id = artist_id
-    elif not name and agent_artist:
-        agent_artist_id = agent_artist.Id
     else:
-        agent_artist_id = None
-
-    agent = models.Agents()
-
-    agent.OwnerId = artist_id
-    agent.EpisodeId = episode.Id
-    agent.ArtistId = agent_artist_id
-    agent.Name = name.strip() if name else None
-    agent.IsMain = is_main
-
-    db.add(agent)
-    db.commit()
-
-    return ResponseMessage(error=False, message="New agent has been added.")
+        return await add_new_agent(
+            db=db,
+            episode_id=episode_id,
+            artist_id=artist_id,
+            name=name,
+            is_main=is_main
+        )
 
 
-@router.post("/add_agent_role", status_code=status.HTTP_200_OK)
-async def add_agent(
+@router.post("/insert_agent_role", status_code=status.HTTP_200_OK)
+async def insert_agent(
         db: db_dependency,
-        artist_id: int,
         agent_id: int,
         role: AgentRolesEntities,
 ):
-    agent = db.query(models.Agents).where(models.Agents.Id == agent_id).first()
-    if agent and agent.OwnerId == artist_id:
-        new_role = models.AgentRoles()
-        new_role.AgentId = agent.Id
-        new_role.Role = role
-        db.add(new_role)
-        db.commit()
+    agent = db.query(
+        models.Agents
+    ).where(
+        models.Agents.Id == agent_id
+    ).first()
+
+    if not agent:
+        raise HTTPException(404, "agent not found!")
+
+    new_role = db.query(
+        models.AgentRoles,
+    ).where(
+        models.AgentRoles.AgentId == agent.Id,
+        models.AgentRoles.Role == role.name,
+    ).first()
+
+    if new_role:
+        raise HTTPException(403, "agent role already exists!")
+
+    new_role = models.AgentRoles()
+    new_role.AgentId = agent.Id
+    new_role.Role = role
+    db.add(new_role)
+    db.commit()
+
+    return ResponseMessage(error=False, message="new agent role added.")
+
+
+@router.get("/fetch_single_agent", status_code=status.HTTP_200_OK)
+async def fetch_agent(
+        db: db_dependency,
+        agent_id: int,
+):
+    agent = db.query(
+        models.Agents
+    ).where(
+        models.Agents.Id == agent_id,
+    ).first()
+
+    if not agent:
+        raise HTTPException(404, "agent not found!")
+
+    return await agent_view_model(db, agent)
+
+
+@router.get("/fetch_raw_agents", status_code=status.HTTP_200_OK)
+async def fetch_agent(
+        db: db_dependency,
+        episode_id: int,
+):
+    results = []
+
+    agents = db.query(
+        models.Agents
+    ).where(
+        models.Agents.EpisodeId == episode_id,
+    ).order_by(
+        models.Agents.OrderBy.asc().nullslast(),
+        models.Agents.Id.asc(),
+    ).all()
+
+    for i in agents:
+        results.append(await agent_view_model(db, i))
+
+    return results
 
 
 @router.get("/fetch_agents", status_code=status.HTTP_200_OK)
 async def fetch_agent(
         db: db_dependency,
-        artist_id: int,
         episode_id: int,
 ):
-    if not await is_episode_owned_by_artist(db, artist_id=artist_id, episode_id=episode_id):
-        raise owned_exception
+    main_agents, agents_with_assigned_roles = await get_agent_with_roles(db, episode_id)
 
-    get_agents = db.query(models.Agents).where(
+    return {"Main_Agent": main_agents, "Agents": agents_with_assigned_roles}
+
+
+@router.get("/fetch_agents_by_role", status_code=status.HTTP_200_OK)
+async def fetch_agents_by_role(
+        db: db_dependency,
+        episode_id: int,
+        role: AgentRolesEntities,
+):
+    results = []
+
+    agents_with_assigned_roles = db.query(
+        models.Agents,
+        models.AgentRoles,
+    ).join(
+        models.AgentRoles
+    ).where(
         models.Agents.EpisodeId == episode_id,
+        models.AgentRoles.Role == role,
     ).order_by(
-        models.Agents.OrderBy.is_(None),
-        models.Agents.OrderBy.asc()
+        models.AgentRoles.OrderBy.asc().nullslast(),
+        models.AgentRoles.Id.asc(),
     ).all()
 
-    main_agents, given_role_agents = await get_agent_with_roles(db, get_agents)
+    for agent, role in agents_with_assigned_roles:
+        results.append(await agent_view_model(db, agent, role))
 
-    return {"Main_Agent": main_agents, "Agents": given_role_agents}
-
-
-@router.put("/edit_agent", status_code=status.HTTP_200_OK)
-async def remove_agent(
-        db: db_dependency,
-        artist_id: int,
-        agent_id: int,
-        name: str | None = None,
-        is_main: bool = None,
-):
-    name = name.strip() if name else None
-
-    agent = db.query(models.Agents).where(
-        and_(
-            models.Agents.Id == agent_id,
-            models.Agents.OwnerId == artist_id,
-        )
-    ).first()
-
-    response = ResponseMessage(error=False, message=f"Ok. agent has been edited")
-
-    if agent:
-        old_name = agent.Name
-        agent.IsMain = is_main if is_main is not None else agent.IsMain
-        if name and agent.Name and agent.Name != name and not agent.ArtistId:
-            agent.Name = name
-            response = ResponseMessage(error=False, message=f"agent '{old_name}' has been renamed to '{name}'.")
-        elif agent.ArtistId:
-            response = ResponseMessage(error=False, message=f"agent '{name}' is an artist.")
-
-        db.commit()
-
-    return response
+    return results
 
 
-@router.put("/reorder_agent", status_code=status.HTTP_200_OK)
+@router.put("/reorder_agents", status_code=status.HTTP_200_OK)
 async def reorder_agent(
         db: db_dependency,
-        artist_id: int,
         episode_id: int,
         agents_ids: List[int],
 ):
-    get_agents = db.query(models.Agents).where(
+    agents = db.query(
+        models.Agents
+    ).where(
         and_(
-            models.Agents.OwnerId == artist_id,
             models.Agents.EpisodeId == episode_id,
         )
     ).all()
 
     for index, agent_id in enumerate(agents_ids):
-        for agent in get_agents:
+        for agent in agents:
             if agent.Id == agent_id:
                 agent.OrderBy = index
 
     db.commit()
 
-    return ResponseMessage(error=False, message=f" agents has been reordered.")
+    return ResponseMessage(error=False, message=f"agents reordered.")
 
 
 @router.put("/reorder_roles", status_code=status.HTTP_200_OK)
 async def reorder_agent(
         db: db_dependency,
-        artist_id: int,
         episode_id: int,
         role: AgentRolesEntities,
-        agents_roles_ids: List[int],
+        roles_ids: List[int],
 ):
-    get_agents_roles = db.query(models.AgentRoles).join(models.Agents).where(
-        and_(
-            models.Agents.OwnerId == artist_id,
-            models.Agents.EpisodeId == episode_id,
-            models.AgentRoles.Role == role,
-        )
+    roles = db.query(
+        models.AgentRoles
+    ).join(
+        models.Agents
+    ).where(
+        models.Agents.EpisodeId == episode_id,
+        models.AgentRoles.Role == role.name,
     ).all()
 
-    for index, agent_role_id in enumerate(agents_roles_ids):
-        for agent_role in get_agents_roles:
-            if agent_role.AgentId == agent_role_id:
-                agent_role.OrderBy = index
+    for index, role_id in enumerate(roles_ids):
+        for role in roles:
+            if role.Id == role_id:
+                role.OrderBy = index
 
     db.commit()
 
-    return ResponseMessage(error=False, message=f"{role}'s agents has been reordered.")
+    return ResponseMessage(error=False, message=f"{role}'s agents reordered.")
 
 
-@router.delete("/remove_agent", status_code=status.HTTP_200_OK)
-async def remove_agent(
+@router.delete("/delete_agent", status_code=status.HTTP_200_OK)
+async def delete_agent(
         db: db_dependency,
-        artist_id: int,
         agent_id: int,
 ):
-    try:
-        agent = db.query(models.Agents).where(
-            and_(
-                models.Agents.Id == agent_id,
-                models.Agents.OwnerId == artist_id,
-            )
-        ).first()
+    agent = db.query(models.Agents).where(
+        and_(
+            models.Agents.Id == agent_id,
+        )
+    ).first()
+    if not agent:
+        raise HTTPException(404, "agent not exists!")
 
-        if agent:
-            db.delete(agent)
-            db.commit()
-
-        return ResponseMessage(error=False, message=f"agent has been removed.")
-
-    except Exception as ex:
-        return ResponseMessage()
+    db.delete(agent)
+    db.commit()
+    return ResponseMessage(error=False, message="agent deleted.")
 
 
-@router.delete("/remove_agent_role", status_code=status.HTTP_200_OK)
-async def remove_agent_role(
+@router.delete("/delete_agent_role", status_code=status.HTTP_200_OK)
+async def delete_agent_role(
         db: db_dependency,
-        artist_id: int,
         role_id: int,
 ):
-    try:
-        role, agent = db.query(models.AgentRoles, models.Agents).join(
-            models.Agents
-        ).where(
-            and_(
-                models.AgentRoles.Id == role_id,
-                models.Agents.OwnerId == artist_id,
-            )
-        ).first()
+    role, agent = db.query(
+        models.AgentRoles,
+        models.Agents
+    ).join(
+        models.Agents
+    ).where(
+        and_(
+            models.AgentRoles.Id == role_id,
+        )
+    ).first()
 
-        if role and agent:
-            db.delete(role)
-            db.commit()
+    if not role or not agent:
+        raise HTTPException(404, "agent or role not exists!")
 
-        return ResponseMessage(error=False, message=f"agent role has been removed.")
+    db.delete(role)
+    db.commit()
 
-    except Exception as ex:
-        return ResponseMessage()
+    return ResponseMessage(error=False, message="agent role deleted.")
