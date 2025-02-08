@@ -1,8 +1,7 @@
 import pathlib
 import uuid
-
 from fastapi import UploadFile, File
-
+from sqlalchemy import func
 from actions.response_model import ResponseMessage
 from actions_functions.listened import get_listened_times
 from constants import ContentTypes, DocumentQualities
@@ -15,9 +14,8 @@ from storage import Buckets, storage, storage_delete_file
 from utills.parse_null import pars_null
 from utills.path_manager import make_path
 from utills.get_duration import get_formatted_duration
-from actions.link_actions import LinkData
 from actions.categories_actions import get_child_to_parent
-from actions.artist_short_info_actions import ArtistShortInfo, get_artist_short_info
+from actions.raw_artist_info_actions import RawArtistInfo, get_raw_artist_info
 
 
 class DocumentFullInfo(BaseModel):
@@ -35,8 +33,7 @@ class DocumentFullInfo(BaseModel):
     ListenedTimes: int | None = None
     Saves: int | None = None
     Likes: int | None = None
-    Artists: List[ArtistShortInfo] | None = None
-    Links: List = []
+    Artists: List[RawArtistInfo] | None = None
     Categories: List = []
     # -----------------------------------
     Followed: bool = False
@@ -51,7 +48,7 @@ class DocumentShortInfo(BaseModel):
     CreationDate: str | None = None
     Single: bool | None = None
     ListenedTimes: int | None = None
-    Artists: List[ArtistShortInfo] | None = None
+    Artists: List[RawArtistInfo] | None = None
 
 
 async def insert_document_action(
@@ -64,29 +61,21 @@ async def insert_document_action(
         color: str | None = None,
         description: str | None = None,
 ):
-
     color = pars_null(color)
     description = pars_null(description)
 
-    new_document = models.Document()
-    new_document.Name = name
-    new_document.Color = color
-    new_document.Description = description
-    new_document.ContentType = content_type
-    new_document.Single = single
-    new_document.Active = active
+    document = models.Document()
+    document.Name = name
+    document.Color = color
+    document.Description = description
+    document.ContentType = content_type
+    document.Single = single
+    document.Active = active
 
-    db.add(new_document)
+    db.add(document)
     db.commit()
 
-    # ownership = models.DocumentsOwners()
-    # ownership.ArtistId = artist_id
-    # ownership.DocumentId = new_document.Id
-    #
-    # db.add(ownership)
-    # db.commit()
-
-    root = make_path(new_document.DirectoryName, is_file=False)
+    root = make_path(document.DirectoryName, is_file=False)
     storage.put_object(Bucket=Buckets.DOCUMENT_BUCKET_NAME, Key=root)
 
     for i in DocumentQualities.directories():
@@ -95,14 +84,20 @@ async def insert_document_action(
 
     if image_file:
         file_name = uuid.uuid4().hex + pathlib.Path(image_file.filename).suffix
-        new_document.MainImage = file_name
+        document.MainImage = file_name
 
         storage.upload_fileobj(image_file.file, Bucket=Buckets.DOCUMENT_BUCKET_NAME,
                                Key=make_path(root, file_name, is_file=True))
 
         db.commit()
 
-    return ResponseMessage(error=False, message="document created")
+    return ResponseMessage(
+        Error=False,
+        Content={
+            'Message': 'document created',
+            'Document_Id': document.Id,
+        },
+    )
 
 
 async def edit_document_action(
@@ -117,15 +112,15 @@ async def edit_document_action(
         active: bool | None = None,
         delete_image: bool | None = False,
 ):
-    the_document = db.query(models.Document).where(models.Document.Id == document_id).first()
-    the_document.Name = name if name is not None else the_document.Name
-    the_document.Color = color
-    the_document.Description = description
-    the_document.ContentType = content_type if content_type is not None else the_document.ContentType
-    the_document.Single = single if single is not None else the_document.Single
-    the_document.Active = active if active is not None else the_document.Active
+    document = db.query(models.Document).where(models.Document.Id == document_id).first()
+    document.Name = name if name is not None else document.Name
+    document.Color = color
+    document.Description = description
+    document.ContentType = content_type if content_type is not None else document.ContentType
+    document.Single = single if single is not None else document.Single
+    document.Active = active if active is not None else document.Active
 
-    main_path = make_path(the_document.DirectoryName, is_file=False)
+    main_path = make_path(document.DirectoryName, is_file=False)
 
     def delete_image_action(image: str):
         try:
@@ -135,7 +130,7 @@ async def edit_document_action(
             print(ex_2)
 
     if image_file and not delete_image:
-        previous_image_file_name = the_document.MainImage
+        previous_image_file_name = document.MainImage
         new_image_file_name = uuid.uuid4().hex + pathlib.Path(image_file.filename).suffix
         try:
             storage.upload_fileobj(
@@ -157,24 +152,30 @@ async def edit_document_action(
                 print(ex_1)
                 delete_image_action(new_image_file_name)
             else:
-                the_document.MainImage = new_image_file_name
+                document.MainImage = new_image_file_name
     elif not image_file and delete_image:
         try:
-            delete_image_action(the_document.MainImage)
+            delete_image_action(document.MainImage)
         except Exception as ex_1:
             print(ex_1)
         else:
-            the_document.MainImage = None
+            document.MainImage = None
 
     db.commit()
-    return ResponseMessage(error=False, message="document updated")
+
+    return ResponseMessage(
+        Error=False,
+        Content={
+            'Message': 'document edited',
+            'Document_Id': document.Id,
+        },
+    )
 
 
 async def get_document_full_info(
         db: db_dependency,
         document: models.Document,
 ) -> DocumentFullInfo:
-
     artists = db.query(models.Artists).join(
         models.DocumentsOwners,
         models.Artists.Id == models.DocumentsOwners.ArtistId
@@ -182,12 +183,12 @@ async def get_document_full_info(
         models.DocumentsOwners.DocumentId == document.Id
     ).order_by(
         models.DocumentsOwners.OrderBy.asc().nullslast(),
-        models.DocumentsOwners.Id,
+        models.DocumentsOwners.Id.asc(),
     ).all()
 
     data = DocumentFullInfo()
     data.Id = document.Id
-    data.Artists = [get_artist_short_info(artist) for artist in artists]
+    data.Artists = [get_raw_artist_info(artist) for artist in artists]
     data.Name = document.Name
     data.ImageUrl = encode_link(
         bucket_name=Buckets.DOCUMENT_BUCKET_NAME,
@@ -197,38 +198,44 @@ async def get_document_full_info(
     data.Description = document.Description
     data.Active = document.Active
     data.ContentType = document.ContentType
-    data.EpisodesNumber = db.query(models.DocumentsEpisodes).where(
-        models.DocumentsEpisodes.DocumentId == document.Id).count()
+    data.EpisodesNumber = db.query(
+        models.DocumentsEpisodes
+    ).where(
+        models.DocumentsEpisodes.DocumentId == document.Id
+    ).count()
     data.ListenedTimes = await get_listened_times(db=db, document_id=document.Id)
-    data.Saves = db.query(models.UserFollowing).where(models.UserFollowing.DocumentId == document.Id).count()
-    data.Likes = db.query(models.UserLikes).where(models.UserLikes.DocumentId == document.Id).count()
+    data.Saves = db.query(
+        models.UserFollowing
+    ).where(
+        models.UserFollowing.DocumentId == document.Id
+    ).count()
+    data.Likes = db.query(
+        models.UserLikes
+    ).where(
+        models.UserLikes.DocumentId == document.Id
+    ).count()
     data.CreationDate = document.CreationDate
     data.Single = document.Single
 
-    durations = db.query(models.DocumentsEpisodes.Duration).where(
+    duration = db.query(
+        func.sum(
+            models.DocumentsEpisodes.Duration
+        ),
+    ).where(
         models.DocumentsEpisodes.DocumentId == document.Id
-    ).all()
+    ).scalar()
+    data.Duration = get_formatted_duration(int(duration) if duration else 0)
 
-    duration = sum([duration[0] for duration in durations])
-    data.Duration = get_formatted_duration(duration)
-
-    links = db.query(models.DocumentsLinks).where(
-        models.DocumentsLinks.DocumentId == document.Id
-    ).order_by(
-        models.DocumentsLinks.OrderBy.is_(None),
-        models.DocumentsLinks.OrderBy.asc()
-    ).all()
-
-    data.Links = [LinkData(Title=link.Title, Link=link.Link) for link in links]
-
-    category = db.query(models.DocumentsCategories).where(
+    category = db.query(
+        models.DocumentsCategories
+    ).where(
         models.DocumentsCategories.DocumentId == document.Id
     ).order_by(
-        models.DocumentsCategories.OrderBy.is_(None),
-        models.DocumentsCategories.OrderBy.asc()
+        models.DocumentsCategories.OrderBy.asc().nullslast(),
+        models.DocumentsCategories.Id.asc(),
     ).all()
 
-    data.Categories = [await get_child_to_parent(db, x.CategoryId, contains_self=True) for x in category]
+    data.Categories = [await get_child_to_parent(db, x, contains_self=True) for x in category]
 
     return data
 
@@ -244,7 +251,7 @@ async def get_document_short_info(
         models.DocumentsOwners.DocumentId == document.Id
     ).order_by(
         models.DocumentsOwners.OrderBy.asc().nullslast(),
-        models.DocumentsOwners.Id,
+        models.DocumentsOwners.Id.asc(),
     ).all()
 
     data = DocumentShortInfo()
@@ -265,7 +272,7 @@ async def get_document_short_info(
 
     data.Single = document.Single
     data.ListenedTimes = await get_listened_times(db=db, document_id=document.Id)
-    data.Artists = [get_artist_short_info(artist) for artist in artists]
+    data.Artists = [get_raw_artist_info(artist) for artist in artists]
 
     data.CreationDate = document.CreationDate
 

@@ -8,7 +8,7 @@ import models
 from utills.encode_link import encode_link
 from storage import Buckets
 from utills.path_manager import make_path
-from actions.artist_short_info_actions import get_artist_short_info, ArtistShortInfo
+from actions.raw_artist_info_actions import get_raw_artist_info, RawArtistInfo
 from actions.agent_actions import get_agent_with_roles, get_main_agent
 from utills.get_duration import get_duration
 
@@ -24,7 +24,7 @@ class EpisodeFullInfo(BaseModel):
     CreationDate: str | None = None
     Listened: int | None = None
     Agents: Dict[str, List] | None = []
-    Artists: List[ArtistShortInfo] | None = []
+    Artists: List[RawArtistInfo] | None = []
     # -----------------------------------
     Followed: bool = False
 
@@ -39,7 +39,7 @@ class EpisodeShortInfo(BaseModel):
     CreationDate: str | None = None
     Listened: int | None = None
     MainAgents: List | None = []
-    Artists: List[ArtistShortInfo] | None = []
+    Artists: List[RawArtistInfo] | None = []
     # -----------------------------------
     Followed: bool = False
 
@@ -69,7 +69,7 @@ async def get_episode_full_info(
         models.DocumentsOwners.DocumentId == document.Id
     ).order_by(
         models.DocumentsOwners.OrderBy.asc().nullslast(),
-        models.DocumentsOwners.Id,
+        models.DocumentsOwners.Id.asc(),
     ).all()
 
     data = EpisodeFullInfo()
@@ -92,7 +92,7 @@ async def get_episode_full_info(
 
     main_agents, agent_with_roles = await get_agent_with_roles(db=db, episode_id=episode.Id)
     data.Agents = {"Main_Agent": main_agents, "Agents": agent_with_roles}
-    data.Artists = [get_artist_short_info(artist) for artist in artists]
+    data.Artists = [get_raw_artist_info(artist) for artist in artists]
 
     return data
 
@@ -122,7 +122,7 @@ async def get_episode_short_info(
         models.DocumentsOwners.DocumentId == document.Id
     ).order_by(
         models.DocumentsOwners.OrderBy.asc().nullslast(),
-        models.DocumentsOwners.Id,
+        models.DocumentsOwners.Id.asc(),
     ).all()
 
     data = EpisodeShortInfo()
@@ -143,6 +143,6 @@ async def get_episode_short_info(
     main_agents = await get_main_agent(db=db, episode_id=episode.Id)
     data.MainAgents = main_agents
     data.Listened = await get_listened_times(db, episode_id=episode.Id)
-    data.Artists = [get_artist_short_info(artist) for artist in artists]
+    data.Artists = [get_raw_artist_info(artist) for artist in artists]
 
     return data

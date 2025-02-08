@@ -1,6 +1,8 @@
 import enum
 
 null_values = ["null", "Null", "NULL", "none", "None", "NONE"]
+true_values = ["true", "True", "TRUE", "t", "T"]
+false_values = ["false", "False", "FALSE", "f", "F"]
 
 
 class ProcessActionTaskState(str, enum.Enum):
@@ -71,4 +73,4 @@ class Socials(enum.Enum):
     website = "website"
     instagram = "instagram"
     telegram = "telegram"
-    twitter = "twitter"
+    x = "x"

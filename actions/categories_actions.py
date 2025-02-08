@@ -1,5 +1,5 @@
+from typing import List
 from fastapi import HTTPException
-
 import models
 from pydantic import BaseModel
 from constants import ContentTypes
@@ -9,7 +9,7 @@ from storage import Buckets
 from utills.path_manager import make_path
 
 
-class CategoryData(BaseModel):
+class CategoryInfo(BaseModel):
     Id: int | None = None
     ParentId: int | None = None
     Name: str | None = None
@@ -19,11 +19,16 @@ class CategoryData(BaseModel):
     OrderBy: int | None = None
 
 
+class ChildToParent(BaseModel):
+    Id: int | None = None
+    Type: str | None = None
+    Categories: List[CategoryInfo] | None = None
+
+
 def category_data(
         category: models.Categories
-) -> CategoryData:
-    
-    data = CategoryData()
+) -> CategoryInfo:
+    data = CategoryInfo()
     data.Id = category.Id
     data.ParentId = category.ParentId
     data.Name = category.Name
@@ -39,21 +44,27 @@ def category_data(
 
 async def get_child_to_parent(
         db: db_dependency,
-        category_id: int,
+        document_category: models.DocumentsCategories,
         contains_self: bool,
-):
+) -> ChildToParent:
+
+    data = ChildToParent()
+
     result = []
     category_type = ""
+
     this = db.query(
         models.Categories
     ).where(
-        models.Categories.Id == category_id
+        models.Categories.Id == document_category.CategoryId
     ).first()
 
     if not this:
         raise HTTPException(403, "category not found!")
 
-    if len(result) != 0 and result.__contains__(None) == False:
+    result.append(category_data(this))
+
+    if len(result) != 0:
         while result[-1].ParentId is not None:
             this = db.query(
                 models.Categories
@@ -68,8 +79,12 @@ async def get_child_to_parent(
         if not contains_self:
             del result[0]
         result.reverse()
-        result = {"type": category_type, 'category': result}
-    return result
+
+    data.Id = document_category.Id
+    data.Type = category_type
+    data.Categories = result
+
+    return data
 
 
 async def get_parent_to_child_ids(
@@ -77,6 +92,7 @@ async def get_parent_to_child_ids(
         category_id: int,
 ):
     result = []
+
     def get_ids(the_id: int):
         result.append(the_id)
         parent = db.query(
@@ -84,8 +100,8 @@ async def get_parent_to_child_ids(
         ).where(
             models.Categories.ParentId == the_id
         ).order_by(
-            models.Categories.OrderBy.is_(None),
-            models.Categories.OrderBy.asc()
+            models.Categories.OrderBy.asc().nullslast(),
+            models.Categories.Id.asc(),
         ).all()
 
         if not parent.__contains__(None):

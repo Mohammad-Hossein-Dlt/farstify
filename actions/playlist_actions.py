@@ -48,7 +48,7 @@ async def get_playlist_full_info(
     ).first()
 
     if not user:
-        raise HTTPException(404, "user not found!")
+        raise HTTPException(404, "general not found!")
 
     playlist_items = db.query(
         models.PlayListRepository,
@@ -64,6 +64,8 @@ async def get_playlist_full_info(
         isouter=True
     ).where(
         models.PlayListRepository.PlayListId == playlist.Id
+    ).order_by(
+        models.PlayListRepository.Id.asc()
     ).all()
 
     duration = 0
@@ -108,7 +110,7 @@ async def get_playlist_short_info(
     ).first()
 
     if not user:
-        raise HTTPException(404, "user not found!")
+        raise HTTPException(404, "general not found!")
 
     playlist_items = db.query(
         models.PlayListRepository,

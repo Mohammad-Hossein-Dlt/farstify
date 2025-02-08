@@ -1,6 +1,6 @@
 import models
 from enum import Enum
-from sqlalchemy import and_, or_, func, desc, asc
+from sqlalchemy import and_, func, desc, asc
 from actions_functions.listened import get_listened_times
 from db_dependency import db_dependency
 from pydantic import BaseModel
@@ -11,14 +11,13 @@ from storage import Buckets
 from constants import OrderBy
 from actions.document_actions import get_document_short_info
 from actions.episode_actions import get_episode_short_info
-from actions.link_actions import LinkData
+from actions.link_actions import LinkData, get_link_data
 
 
-class ArtistPersonalInfo(BaseModel):
+class ArtistPageInfo(BaseModel):
     Id: int | None = None
     Name: str | None = None
     ProfileImageUrl: str | None = None
-    ImagesUrls: List[str] = []
     ContentType: str | None = None
     Following: int | None = None
     ListenedTimes: int | None = None
@@ -32,10 +31,12 @@ class ArtistProfileInfo(BaseModel):
     Id: int | None = None
     Name: str | None = None
     ProfileImageUrl: str | None = None
+    ImagesUrls: List[str] = []
     ContentType: str | None = None
     Following: int | None = None
     ListenedTimes: int | None = None
     Published: int | None = None
+    Links: List[LinkData] = []
     # -----------------------------------
     Followed: bool = False
 
@@ -47,51 +48,11 @@ class ArtistDocumentsSortBy(str, Enum):
     contributed = "contributed"
 
 
-async def get_artist_profile_info(
+async def get_artist_page_info(
         db: db_dependency,
         artist: models.Artists
-) -> ArtistProfileInfo and int:
-    data = ArtistProfileInfo()
-
-    data.Id = artist.Id
-
-    data.Name = artist.Name
-
-    data.ProfileImageUrl = encode_link(
-        bucket_name=Buckets.USER_BUCKET_NAME,
-        path=make_path(artist.DirectoryName, artist.ProfileImage, is_file=True)
-    ) if artist.ProfileImage else None
-
-    data.ContentType = artist.ContentType
-
-    data.Following = db.query(models.UserFollowing).where(
-        and_(
-            models.UserFollowing.ArtistId == artist.Id,
-        )
-    ).count()
-
-    data.ListenedTimes = await get_listened_times(db=db, artist_id=artist.Id)
-
-    data.Published = db.query(
-        models.Document
-    ).join(
-        models.DocumentsOwners,
-        models.Document.Id == models.DocumentsOwners.DocumentId
-    ).filter(
-        and_(
-            models.DocumentsOwners.ArtistId == artist.Id,
-            models.Document.Active.is_(True),
-        )
-    ).count()
-
-    return data
-
-
-async def get_artist_personal_info(
-        db: db_dependency,
-        artist: models.Artists
-) -> ArtistPersonalInfo:
-    data = ArtistPersonalInfo()
+) -> ArtistPageInfo:
+    data = ArtistPageInfo()
 
     data.Id = artist.Id
 
@@ -129,17 +90,68 @@ async def get_artist_personal_info(
     ).where(
         models.ArtistLinks.ArtistId == artist.Id,
     ).order_by(
-        models.ArtistLinks.OrderBy.is_(None),
-        asc(models.ArtistLinks.OrderBy)
+        asc(models.ArtistLinks.OrderBy).nullslast(),
+        asc(models.ArtistLinks.Id),
     ).all()
 
-    data.Links = [LinkData(Title=link.Title, Link=link.Link) for link in links]
+    data.Links = [get_link_data(link) for link in links]
+
+    return data
+
+
+async def get_artist_profile_info(
+        db: db_dependency,
+        artist: models.Artists
+) -> ArtistProfileInfo:
+    data = ArtistProfileInfo()
+
+    data.Id = artist.Id
+
+    data.Name = artist.Name
+
+    data.ProfileImageUrl = encode_link(
+        bucket_name=Buckets.USER_BUCKET_NAME,
+        path=make_path(artist.DirectoryName, artist.ProfileImage, is_file=True)
+    ) if artist.ProfileImage else None
+
+    data.ContentType = artist.ContentType
+
+    data.Following = db.query(models.UserFollowing).where(
+        and_(
+            models.UserFollowing.ArtistId == artist.Id,
+        )
+    ).count()
+
+    data.ListenedTimes = await get_listened_times(db=db, artist_id=artist.Id)
+
+    data.Published = db.query(
+        models.Document
+    ).join(
+        models.DocumentsOwners,
+        models.Document.Id == models.DocumentsOwners.DocumentId
+    ).filter(
+        and_(
+            models.DocumentsOwners.ArtistId == artist.Id,
+            models.Document.Active.is_(True),
+        )
+    ).count()
+
+    links = db.query(
+        models.ArtistLinks
+    ).where(
+        models.ArtistLinks.ArtistId == artist.Id,
+    ).order_by(
+        asc(models.ArtistLinks.OrderBy).nullslast(),
+        asc(models.ArtistLinks.Id),
+    ).all()
+
+    data.Links = [get_link_data(link) for link in links]
 
     images = db.query(models.ArtistImages).where(
         models.ArtistImages.ArtistId == artist.Id
     ).order_by(
-        models.ArtistImages.OrderBy.is_(None),
-        asc(models.ArtistImages.OrderBy),
+        asc(models.ArtistImages.OrderBy).nullslast(),
+        asc(models.ArtistImages.Id),
     ).all()
 
     for image in images:
@@ -152,13 +164,12 @@ async def get_artist_personal_info(
     return data
 
 
-async def best_documents(
+async def get_best_documents(
         db: db_dependency,
         artist_id: int,
         limit: int,
         page: int,
 ):
-
     # sub = db.query(
     #     models.Document, func.max(models.ListenedHistory.DocumentId).label("max_listened")
     # ).outerjoin(
@@ -176,7 +187,7 @@ async def best_documents(
     #     models.DocumentsOwners,
     #     models.Document.Id == models.DocumentsOwners.DocumentId
     # ).where(
-    #     models.DocumentsOwners.ArtistId == artist.Id
+    #     models.DocumentsOwners.ArtistId == admin.Id
     # ).order_by(
     #     desc(sub.c.max_listened)
     # ).limit(
@@ -203,7 +214,7 @@ async def best_documents(
     return [await get_document_short_info(db, i) for i in docs]
 
 
-async def best_episodes(
+async def get_best_episodes(
         db: db_dependency,
         artist_id: int,
         limit: int,
@@ -240,7 +251,7 @@ async def best_episodes(
     return [await get_episode_short_info(db, i) for i in episodes]
 
 
-async def fetch_all_artist_documents(
+async def get_all_artist_documents(
         db: db_dependency,
         artist_id: int,
         sort: ArtistDocumentsSortBy,
@@ -363,7 +374,7 @@ async def fetch_all_artist_documents(
     return result
 
 
-async def fetch_artist_appears_on_documents(
+async def get_artist_appears_on_documents(
         db: db_dependency,
         artist_id: int,
         limit: int,
@@ -405,7 +416,7 @@ async def fetch_artist_appears_on_documents(
     return result
 
 
-async def fetch_artist_appears_on_episodes(
+async def get_artist_appears_on_episodes(
         db: db_dependency,
         artist_id: int,
         limit: int,

@@ -9,7 +9,7 @@ async def is_document_owned_by_artist(
         artist_id: int,
         document_id: int,
 ) -> bool:
-    # artist = db.query(Artists).where(
+    # admin = db.query(Artists).where(
     #     Artists.Id == artist_id
     # ).first()
     ownership = db.query(DocumentsOwners).where(
@@ -28,7 +28,7 @@ async def is_episode_owned_by_artist(
         artist_id: int,
         episode_id: int,
 ) -> bool:
-    # artist = db.query(Artists).where(
+    # admin = db.query(Artists).where(
     #     Artists.Id == artist_id
     # ).first()
 

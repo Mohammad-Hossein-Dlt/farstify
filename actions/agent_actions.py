@@ -1,6 +1,6 @@
 from fastapi import HTTPException
 from pydantic import BaseModel
-from actions.artist_short_info_actions import ArtistShortInfo, get_artist_short_info
+from actions.raw_artist_info_actions import RawArtistInfo, get_raw_artist_info
 from actions.response_model import ResponseMessage
 from db_dependency import db_dependency
 import models
@@ -8,10 +8,10 @@ from typing import List, Dict
 from constants import AgentRolesEntities
 
 
-class AgentViewMode(BaseModel):
+class AgentInfo(BaseModel):
     Agent_Id: int | None = None
     Role_Id: int | None = None
-    Profile: ArtistShortInfo | None = None
+    Profile: RawArtistInfo | None = None
     Name: str | None = None
     Is_Main: bool = False
     Order: int | None = None
@@ -74,7 +74,13 @@ async def add_new_agent(
     db.add(agent)
     db.commit()
 
-    return {'Agent_Id': agent.Id}
+    return ResponseMessage(
+        Error=False,
+        Content={
+            'Message': 'agent added',
+            'Agent_Id': agent.Id,
+        },
+    )
 
 
 async def edit_agent(
@@ -103,7 +109,15 @@ async def edit_agent(
     if not agent:
         raise HTTPException(404, "agent not found!")
 
-    response = ResponseMessage(error=False, message=f"agent edited.")
+    response = ResponseMessage(error=False, message="")
+
+    response = ResponseMessage(
+        Error=False,
+        Content={
+            'Message': 'agent edited',
+            'Agent_Id': agent.Id,
+        },
+    )
 
     if agent:
 
@@ -114,7 +128,14 @@ async def edit_agent(
             old_name = agent.Name
 
             agent.Name = name
-            response = ResponseMessage(error=False, message=f"agent '{old_name}' renamed to '{name}'.")
+
+            response = ResponseMessage(
+                Error=False,
+                Content={
+                    'Message': f"agent '{old_name}' renamed to '{name}'",
+                    'Agent_Id': agent.Id,
+                },
+            )
 
         elif artist_id and agent.ArtistId:
 
@@ -125,11 +146,17 @@ async def edit_agent(
             ).first()
 
             if not new_artist:
-                raise HTTPException(404, "new artist not found!")
+                raise HTTPException(404, "new admin not found!")
 
             agent.ArtistId = artist_id
 
-            response = ResponseMessage(error=False, message=f"new artist replaced the previous artist")
+            response = ResponseMessage(
+                Error=False,
+                Content={
+                    'Message': 'new admin replaced the previous admin',
+                    'Agent_Id': agent.Id,
+                },
+            )
 
         elif artist_id and agent.Name:
 
@@ -140,7 +167,7 @@ async def edit_agent(
             ).first()
 
             if not new_artist:
-                raise HTTPException(404, "new artist not found!")
+                raise HTTPException(404, "new admin not found!")
 
             agent.Name = None
             agent.ArtistId = new_artist.Id
@@ -152,16 +179,16 @@ async def edit_agent(
 
         db.commit()
 
-    return {'Agent_Id': agent.Id}
+    return response
 
 
 async def agent_view_model(
         db: db_dependency,
         agent: models.Agents,
         role: models.AgentRoles | None = None,
-) -> AgentViewMode:
+) -> AgentInfo:
 
-    data = AgentViewMode()
+    data = AgentInfo()
     data.Agent_Id = agent.Id
 
     if agent.ArtistId:
@@ -173,9 +200,9 @@ async def agent_view_model(
         ).first()
 
         if not artist:
-            raise HTTPException(404, "artist not found!")
+            raise HTTPException(404, "admin not found!")
 
-        data.Profile = get_artist_short_info(artist)
+        data.Profile = get_raw_artist_info(artist)
 
     elif agent.Name:
 

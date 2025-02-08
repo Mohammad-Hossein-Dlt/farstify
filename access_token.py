@@ -58,7 +58,7 @@ def decode_artist_access_token(
     if token:
         token_data = decode_access_token(encoded_token=token.credentials, empty_data=False)
         if token_data.account_type != AccountTypes.artist:
-            raise HTTPException(403, "you are not artist")
+            raise HTTPException(403, "you are not admin")
         return token_data
 
     raise credentials_exception
@@ -70,7 +70,7 @@ def decode_user_access_token(
     if token:
         token_data = decode_access_token(encoded_token=token.credentials, empty_data=False)
         if token_data.account_type != AccountTypes.user:
-            raise HTTPException(403, "you are not user")
+            raise HTTPException(403, "you are not general")
         return token_data
 
     raise credentials_exception
