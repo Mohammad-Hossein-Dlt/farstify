@@ -1,0 +1,208 @@
+services:
+  # category services
+  # category-service:
+  #   working_dir: /app
+  #   build:
+  #     context: ./category
+  #     dockerfile: Dockerfile
+  #   container_name: category_service
+  #   restart: always
+  #   env_file:
+  #     - .env
+  #   depends_on:
+  #     - mongodb-service
+  #   ports:
+  #     - 8001:80
+
+  # 16k-service:
+  #   working_dir: /app
+  #   build:
+  #     context: ./hls-dash-provider
+  #     dockerfile: Dockerfile
+  #   container_name: 16k_service
+  #   restart: always
+  #   env_file:
+  #     - .env
+  #   depends_on:
+  #     - broker
+  #     - rustfs
+  #   tmpfs:
+  #     - /tmp:rw,size=2G,mode=1777
+  #   environment:
+  #     # - TMPDIR=/tmp
+  #     - CONVERTER_PARAMS__BITRATE=16_000
+  #     - RABBITMQ__QUEUE=16k-queue
+
+  # 32k-service:
+  #   working_dir: /app
+  #   build:
+  #     context: ./hls-dash-provider
+  #     dockerfile: Dockerfile
+  #   container_name: 32k_service
+  #   restart: always
+  #   env_file:
+  #     - .env
+  #   depends_on:
+  #     - broker
+  #     - rustfs
+  #   tmpfs:
+  #     - /tmp:rw,size=2G,mode=1777
+  #   environment:
+  #     # - TMPDIR=/tmp
+  #     - CONVERTER_PARAMS__BITRATE=32_000
+  #     - RABBITMQ__QUEUE=32k-queue
+
+  # 64k-service:
+  #   working_dir: /app
+  #   build:
+  #     context: ./hls-dash-provider
+  #     dockerfile: Dockerfile
+  #   container_name: 64k_service
+  #   restart: always
+  #   env_file:
+  #     - .env
+  #   depends_on:
+  #     - broker
+  #     - rustfs
+  #   tmpfs:
+  #     - /tmp:rw,size=2G,mode=1777
+  #   environment:
+  #     # - TMPDIR=/tmp
+  #     - CONVERTER_PARAMS__BITRATE=64_000
+  #     - RABBITMQ__QUEUE=64k-queue
+
+  # 128k-service:
+  #   working_dir: /app
+  #   build:
+  #     context: ./hls-dash-provider
+  #     dockerfile: Dockerfile
+  #   container_name: 128k_service
+  #   restart: always
+  #   env_file:
+  #     - .env
+  #   depends_on:
+  #     - broker
+  #     - rustfs
+  #   tmpfs:
+  #     - /tmp:rw,size=2G,mode=1777
+  #   environment:
+  #     # - TMPDIR=/tmp
+  #     - CONVERTER_PARAMS__BITRATE=128_000
+  #     - RABBITMQ__QUEUE=128k-queue
+
+  # 256k-service:
+  #   working_dir: /app
+  #   build:
+  #     context: ./hls-dash-provider
+  #     dockerfile: Dockerfile
+  #   container_name: 256k_service
+  #   restart: always
+  #   env_file:
+  #     - .env
+  #   depends_on:
+  #     - broker
+  #     - rustfs
+  #   tmpfs:
+  #     - /tmp:rw,size=2G,mode=1777
+  #   environment:
+  #     # - TMPDIR=/tmp
+  #     - CONVERTER_PARAMS__BITRATE=256_000
+  #     - RABBITMQ__QUEUE=256k-queue
+
+  # dash-manifest-service:
+  #   working_dir: /app
+  #   build:
+  #     context: ./converter
+  #     dockerfile: Dockerfile
+  #   container_name: dash_manifest_service
+  #   restart: always
+  #   env_file:
+  #     - .env
+  #   depends_on:
+  #     - broker
+  #     - rustfs
+  #   tmpfs:
+  #     - /tmp:rw,size=2G,mode=1777
+  #   environment:
+  #     # - TMPDIR=/tmp
+  #     - CONVERTER_PARAMS__BITRATE=256_000
+  #     - RABBITMQ__QUEUE=dash-manifest-queue
+
+  # database
+  mongodb-service:
+    image: mongo:latest
+    container_name: mongodb_service
+    restart: always
+    ports:
+      - 27017:27017
+    volumes:
+      - mongo_data:/data/db
+    env_file:
+      - .env
+    environment:
+      MONGO_HOST: ${MONGODB__HOST}
+      MONGO_PORT: ${MONGODB__PORT}
+      MONGO_INITDB_ROOT_USERNAME: ${MONGODB__USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB__PASSWORD}
+      # MONGO_INITDB_DATABASE: ${MONGODB__DB_NAME}
+
+  # broker
+  broker:
+    image: rabbitmq:3.13-management
+    container_name: broker_service
+    restart: always
+    ports:
+      - 5672:5672 # AMQP
+      - 15672:15672 # Management UI
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: dev
+      RABBITMQ_DEFAULT_PASS: devpass
+      RABBITMQ_DEFAULT_VHOST: app
+
+  # storage
+  rustfs:
+    image: rustfs/rustfs:latest
+    container_name: rustfs
+    restart: unless-stopped
+    ports:
+      - "9000:9000" # S3 API
+      - "9001:9001" # Web console / dashboard
+    volumes:
+      - rustfs-data:/data
+    environment:
+      RUSTFS_ACCESS_KEY: admin
+      RUSTFS_SECRET_KEY: admin
+      RUSTFS_DATA_DIR: /data
+
+  # Cache db
+  redis-service:
+    image: redis
+    container_name: redis_service
+    restart: always
+    ports:
+      - 6379:6379
+    volumes:
+      - redis_data:/data
+    env_file:
+      - .env
+    command: ["redis-server", "--requirepass", "${REDIS__PASSWORD}"]
+
+  redisinsight:
+    image: redis/redisinsight:latest
+    container_name: redisinsight
+    restart: always
+    ports:
+      - 55040:5540
+    volumes:
+      - redisinsight_data:/data
+    depends_on:
+      - redis-service
+
+volumes:
+  mongo_data:
+  rabbitmq_data:
+  rustfs-data:
+  redis_data:
+  redisinsight_data:
