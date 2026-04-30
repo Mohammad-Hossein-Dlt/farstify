@@ -23,5 +23,4 @@ async def get_all_artist(
         outputs_list = await get_all_artists_usecase.execute(filter)
         return [ output.model_dump(mode="json") for output in outputs_list ]
     except AppBaseException as ex:
-        raise
         raise HTTPException(status_code=ex.status_code, detail=str(ex))

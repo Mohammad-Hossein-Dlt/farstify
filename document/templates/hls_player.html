@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>HLS Audio Player with Quality Switch</title>
+
+    <!-- <script src="/static/lib/hls.js"></script> -->
+    <script src=" {{ url_for('static_lib', path='/hls.js') }} "></script>
+    <!-- <script src="./static/hls.js"></script> -->
+
+    <style>
+        body {
+            font-family: sans-serif;
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        select {
+            padding: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        audio {
+            width: 500px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h2>HLS Player (FastAPI)</h2>
+
+    <audio id="audio" controls data-url="{{ url }}"></audio>
+
+    <div class="controls">
+        <label>Select Quality:</label>
+        <select id="qualitySelect">
+            <option value="-1">auto</option>
+        </select>
+    </div>
+
+    <script>
+
+        <!-- const url = 'stream/hls/master.m3u8'; -->
+
+        const audioElement = document.getElementById("audio");
+        const url = audioElement.dataset.url
+        var select = document.getElementById('qualitySelect');
+        var totalBytes = 0;
+
+        if (Hls.isSupported()) {
+            var hls = new Hls({
+                autoStartLoad: true,
+                startPosition: -1
+            });
+
+            hls.loadSource(url);
+            hls.attachMedia(audio);
+
+            // ۱. پر کردن لیست کیفیت‌ها وقتی مانیفست لود شد
+            hls.on(Hls.Events.MANIFEST_PARSED, function (event, data) {
+                console.log("تعداد کیفیت‌های یافت شده:", data.levels.length);
+
+                // پاک کردن گزینه‌های قبلی (بجز Auto)
+                select.innerHTML = '<option value="-1"> auto </option>';
+
+                data.levels.forEach(function (level, index) {
+                    var option = document.createElement('option');
+                    option.value = index;
+
+                    // نمایش نام کیفیت یا بیت‌ریت
+                    var name = level.name || Math.round(level.bitrate / 1000) + " K";
+                    option.text = name;
+                    select.appendChild(option);
+                });
+            });
+
+            // ۲. گوش دادن به تغییر کیفیت (چه خودکار چه دستی)
+            hls.on(Hls.Events.LEVEL_SWITCHED, function (event, data) {
+                var levelName = hls.levels[data.level].name || Math.round(hls.levels[data.level].bitrate / 1000) + " K";
+                console.log("کیفیت فعلی:", levelName);
+            });
+
+            // ۳. اعمال تغییر کیفیت هنگام انتخاب کاربر
+            select.addEventListener('change', function () {
+                var levelIndex = parseInt(this.value);
+                console.log("درخواست تغییر کیفیت به سطح:", levelIndex);
+
+                // در hls.js مقدار -1 یعنی کیفیت خودکار (ABR)
+                hls.currentLevel = levelIndex;
+            });
+
+            // رویدادهای دیباگ شما
+            hls.on(Hls.Events.FRAG_LOADED, function (event, data) {
+                totalBytes += data.stats.total;
+                // console.log("Downloaded: " + (totalBytes / 1024).toFixed(2) + " KB");
+            });
+
+        } else if (audio.canPlayType('application/vnd.apple.mpegurl')) {
+            // برای سافاری که HLS را نیتیو ساپورت میکند (اما کنترل کیفیت دستی ندارد)
+            audio.src = '/static/hls/master.m3u8';
+        }
+    </script>
+</body>
+
+</html>

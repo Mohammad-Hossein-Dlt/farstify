@@ -102,7 +102,6 @@ class ArtistLinkMongodbRepo(IArtistLinkRepo):
         self,
     ) -> bool:
         try:
-            artist_id = convert_object_id(artist_id)
             result = await ArtistLinkCollection.find_all().delete()
             return bool(result.deleted_count) 
         except:

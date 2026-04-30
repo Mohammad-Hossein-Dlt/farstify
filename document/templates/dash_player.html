@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>DASH Audio Player with Quality Switch</title>
+
+    <!-- <script src="/static/lib/dash.all.min.js"></script> -->
+    <!-- <script src="./static/dash.all.min.js"></script> -->
+    <script src=" {{ url_for('static_lib', path='/dash.all.min.js') }} "></script>
+
+    <style>
+        body {
+            font-family: sans-serif;
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        select {
+            padding: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        audio {
+            width: 500px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h2>DASH Player (FastAPI)</h2>
+
+    <audio id="audio" controls data-url="{{ url }}"></audio>
+
+    <div class="controls">
+        <label>Select Quality:</label>
+        <select id="qualitySelect">
+            <option value="-1">auto</option>
+        </select>
+    </div>
+
+    <script>
+
+        <!-- const url = "stream/dash/manifest.mpd"; -->
+
+        window.onload = function () {
+
+            const audioElement = document.getElementById("audio");
+            const url = audioElement.dataset.url
+            const player = dashjs.MediaPlayer().create();
+
+            player.initialize(audioElement, url, true);
+
+            // این رویداد زمانی اجرا می‌شود که مانیفست کاملاً خوانده شده است
+            player.on(dashjs.MediaPlayer.events.MANIFEST_LOADED, function (e) {
+                console.log("مانیفست بارگذاری شد.");
+
+                // یک تاخیر کوچک برای اطمینان از پردازش بیت‌ریت‌ها توسط پلیر
+                setTimeout(() => {
+                    const select = document.getElementById("qualitySelect");
+
+                    // گرفتن لیست بیت‌ریت‌های صوتی
+                    const bitrates = player.getBitrateInfoListFor("audio");
+
+                    console.log("لیست بیت‌ریت‌های شناسایی شده:", bitrates);
+
+                    if (bitrates.length > 0) {
+                        // پاک کردن گزینه‌های قبلی به جز "خودکار"
+                        select.innerHTML = '<option value="-1">auto</option>';
+
+                        bitrates.forEach((info, index) => {
+                            const opt = document.createElement("option");
+                            opt.value = index;
+                            // نمایش پهنای باند یا ID کیفیت
+                            const label = info.bitrate ? Math.round(info.bitrate / 1000) + "K" : "quality " + (index + 1);
+                            opt.text = label;
+                            select.appendChild(opt);
+                        });
+                    } else {
+                        console.warn("هیچ بیت‌ریت صوتی مجزایی پیدا نشد! احتمالاً AdaptationSet مشکل دارد.");
+                    }
+                }, 500);
+            });
+
+            // تغییر کیفیت دسترسی
+            document.getElementById("qualitySelect").addEventListener("change", function () {
+                const level = parseInt(this.value);
+                if (level === -1) {
+                    player.updateSettings({ 'streaming': { 'abr': { 'autoSwitchBitrate': { 'audio': true } } } });
+                } else {
+                    player.updateSettings({ 'streaming': { 'abr': { 'autoSwitchBitrate': { 'audio': false } } } });
+                    player.setQualityFor("audio", level);
+                    console.log("تغییر کیفیت به سطح: " + level);
+                }
+            });
+        };
+    </script>
+</body>
+
+</html>
