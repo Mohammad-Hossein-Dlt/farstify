@@ -1,21 +1,20 @@
 from . import (
     _router,
-    # create_all_categories,
-    create_artist,
-    get_artist,
-    update_artist,
-    delete_artist,
-    get_all_artists,
-    delete_all_artists,
+    create,
+    get_by_id,
+    update,
+    delete_by_id,
+    get_by_criteria,
+    delete_all,
 )
 
 __all__ = [
     "_router",
     # "create_all_categories",
-    "create_artist",
-    "get_artist",
-    "update_artist",
-    "delete_artist",
-    "get_all_artists",
-    "delete_all_artists",
+    "create",
+    "get_by_id",
+    "update",
+    "delete_by_id",
+    "get_by_criteria",
+    "delete_all",
 ]

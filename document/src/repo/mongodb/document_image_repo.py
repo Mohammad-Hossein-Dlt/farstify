@@ -6,7 +6,7 @@ from src.infra.utils.convert_id import convert_object_id
 
 class DocumentImageMongodbRepo(IDocumentImageRepo):
         
-    async def create_image(
+    async def create(
         self,
         image: DocumentImageModel,
     ) -> DocumentImageModel:
@@ -16,7 +16,7 @@ class DocumentImageMongodbRepo(IDocumentImageRepo):
         ).insert()
         return DocumentImageModel.model_validate(new_document, from_attributes=True)
         
-    async def get_image_by_id(
+    async def get_by_id(
         self,
         image_id: str,
     ) ->  DocumentImageModel:
@@ -33,7 +33,7 @@ class DocumentImageMongodbRepo(IDocumentImageRepo):
         except:
             raise EntityNotFoundError(status_code=404, message="document not found")
 
-    async def update_image(
+    async def update(
         self,
         image: DocumentImageModel,
     ) ->  DocumentImageModel:
@@ -53,11 +53,11 @@ class DocumentImageMongodbRepo(IDocumentImageRepo):
                 },
             )
                                     
-            return await self.get_image_by_id(image.id)
+            return await self.get_by_id(image.id)
         except EntityNotFoundError:
             raise
         
-    async def delete_image(
+    async def delete_by_id(
         self,
         image_id: str,
     ) -> bool:
@@ -71,7 +71,7 @@ class DocumentImageMongodbRepo(IDocumentImageRepo):
         except:
             raise EntityNotFoundError(status_code=404, message="document not found")
         
-    async def get_images(
+    async def get_by_document_id(
         self,
         document_id: str,
     ) ->  list[DocumentImageModel]:
@@ -85,7 +85,7 @@ class DocumentImageMongodbRepo(IDocumentImageRepo):
         except EntityNotFoundError:
             raise EntityNotFoundError(status_code=404, message="There are no documents")
     
-    async def delete_document_images(
+    async def delete_by_document_id(
         self,
         document_id: str,
     ) -> bool:
@@ -98,7 +98,7 @@ class DocumentImageMongodbRepo(IDocumentImageRepo):
         except:
             raise EntityNotFoundError(status_code=404, message="document not found")
     
-    async def delete_all_images(
+    async def delete_all(
         self,
     ) -> bool:
         try:

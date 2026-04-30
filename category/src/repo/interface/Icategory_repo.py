@@ -5,68 +5,68 @@ from src.models.schemas.filter.categories_filter_input import CategoryFilterInpu
 class ICategoryRepo(ABC):
         
     @abstractmethod
-    async def create_category(
+    async def create(
         category: CategoryModel,
     ) -> CategoryModel:
     
         raise NotImplementedError         
     
     @abstractmethod
-    async def check_category(
+    async def check_unique(
         category: CategoryModel,
     ) -> CategoryModel:
     
         raise NotImplementedError        
 
     @abstractmethod
-    async def get_category_by_id(
+    async def get_by_id(
         category_id: str,
     ) -> CategoryModel:
     
         raise NotImplementedError
     
     @abstractmethod
-    async def update_category(
+    async def update(
         category: CategoryModel,
     ) -> CategoryModel:
     
         raise NotImplementedError
     
     @abstractmethod
-    async def delete_category(
+    async def delete_by_id(
         category_id: str,
     ) -> bool:
     
         raise NotImplementedError
 
     @abstractmethod
-    async def get_all_categories() -> list[CategoryModel]:
+    async def get_all() -> list[CategoryModel]:
     
         raise NotImplementedError
     
     @abstractmethod
-    async def get_categories_with_filter(
-        filter: CategoryFilterInput,
+    async def get_by_criteria(
+        criteria: CategoryFilterInput,
     ) -> list[CategoryModel]:
     
         raise NotImplementedError
     
     @abstractmethod
-    async def get_parent_to_child(
-        filter: CategoryFilterInput,
+    async def get_tree_from_parent(
+        criteria: CategoryFilterInput,
     ) -> list[CategoryModel]:
     
         raise NotImplementedError
     
     @abstractmethod
-    async def get_child_to_parent(
-        filter: CategoryFilterInput,
+    async def get_ancestors(
+        parent_id: str,
     ) -> list[CategoryModel]:
     
         raise NotImplementedError
     
     @abstractmethod
-    async def get_categories_by_parent_id(
+    async def get_by_parent_id(
         parent_id: str | None = None,
         contains_danglings: bool = False, 
     ) -> list[CategoryModel]:
@@ -74,20 +74,20 @@ class ICategoryRepo(ABC):
         raise NotImplementedError
         
     @abstractmethod
-    async def get_categories_by_parent_id_listed(
+    async def get_descendants(
         parent_id: str,
     ) -> list[CategoryModel]:
     
         raise NotImplementedError
     
     @abstractmethod
-    async def delete_categories_by_parent_id(
+    async def delete_by_parent_id(
         parent_id: str,
     ) -> bool:
     
         raise NotImplementedError
     
     @abstractmethod
-    async def delete_all_categories() -> bool:
+    async def delete_all() -> bool:
     
         raise NotImplementedError

@@ -1,7 +1,6 @@
 from src.domain.schemas.artist.artist_model import ArtistModel
 from beanie import Document, PydanticObjectId, before_event, Update
 from bson import ObjectId
-from pymongo import IndexModel
 from pydantic import Field, model_validator
 from datetime import datetime, timezone
 
@@ -14,11 +13,7 @@ class ArtistCollection(ArtistModel, Document):
     
     class Settings:
         name = "Artist"
-        # indexes = [
-        #     IndexModel("images._id", unique=True),
-        #     IndexModel("links._id", unique=True),
-        # ]
-        
+
     @before_event(Update)
     def set_updated_at(self):
         self.updated_at = datetime.now(timezone.utc)

@@ -6,7 +6,7 @@ from src.infra.utils.convert_id import convert_object_id
 
 class ArtistLinkMongodbRepo(IArtistLinkRepo):
         
-    async def create_link(
+    async def create(
         self,
         link: ArtistLinkModel,
     ) -> ArtistLinkModel:
@@ -16,7 +16,7 @@ class ArtistLinkMongodbRepo(IArtistLinkRepo):
         ).insert()
         return ArtistLinkModel.model_validate(new_link, from_attributes=True)
         
-    async def get_link_by_id(
+    async def get_by_id(
         self,
         link_id: str,
     ) ->  ArtistLinkModel:
@@ -33,7 +33,7 @@ class ArtistLinkMongodbRepo(IArtistLinkRepo):
         except:
             raise EntityNotFoundError(status_code=404, message="Artist not found")
 
-    async def update_link(
+    async def update(
         self,
         link: ArtistLinkModel,
     ) ->  ArtistLinkModel:
@@ -53,11 +53,11 @@ class ArtistLinkMongodbRepo(IArtistLinkRepo):
                 },
             )
                         
-            return await self.get_link_by_id(link.id)
+            return await self.get_by_id(link.id)
         except EntityNotFoundError:
             raise
         
-    async def delete_link(
+    async def delete_by_id(
         self,
         link_id: str,
     ) -> bool:
@@ -71,7 +71,7 @@ class ArtistLinkMongodbRepo(IArtistLinkRepo):
         except:
             raise EntityNotFoundError(status_code=404, message="Artist not found")
         
-    async def get_links(
+    async def get_by_artist_id(
         self,
         artist_id: str,
     ) ->  list[ArtistLinkModel]:
@@ -85,7 +85,7 @@ class ArtistLinkMongodbRepo(IArtistLinkRepo):
         except EntityNotFoundError:
             raise EntityNotFoundError(status_code=404, message="There are no artists")
     
-    async def delete_artist_links(
+    async def delete_by_artist_id(
         self,
         artist_id: str,
     ) -> bool:
@@ -98,7 +98,7 @@ class ArtistLinkMongodbRepo(IArtistLinkRepo):
         except:
             raise EntityNotFoundError(status_code=404, message="Artist not found")
     
-    async def delete_all_links(
+    async def delete_all(
         self,
     ) -> bool:
         try:

@@ -9,13 +9,13 @@ from beanie.operators import And, Or, NotIn
 
 class CategoryMongodbRepo(ICategoryRepo):
         
-    async def create_category(
+    async def create(
         self,
         category: CategoryModel,
     ) -> CategoryModel:
         
         try:
-            await self.check_category(category)
+            await self.check_unique(category)
             raise DuplicateEntityError(409, "Category already exist")
         except EntityNotFoundError:
             new_category = await CategoryCollection.insert(
@@ -23,7 +23,7 @@ class CategoryMongodbRepo(ICategoryRepo):
             )
             return CategoryModel.model_validate(new_category, from_attributes=True)
     
-    async def check_category(
+    async def check_unique(
         self,
         category: CategoryModel,
     ) -> CategoryModel:
@@ -39,7 +39,7 @@ class CategoryMongodbRepo(ICategoryRepo):
         except:
             raise EntityNotFoundError(status_code=404, message="Category not found")
         
-    async def get_category_by_id(
+    async def get_by_id(
         self,
         category_id: str,
     ) ->  CategoryModel:
@@ -56,7 +56,7 @@ class CategoryMongodbRepo(ICategoryRepo):
         except:
             raise EntityNotFoundError(status_code=404, message="Category not found")
         
-    async def update_category(
+    async def update(
         self,
         category: CategoryModel,
     ) ->  CategoryModel:
@@ -80,11 +80,11 @@ class CategoryMongodbRepo(ICategoryRepo):
                 },
             )
                         
-            return await self.get_category_by_id(category.id)
+            return await self.get_by_id(category.id)
         except EntityNotFoundError:
             raise
         
-    async def delete_category(
+    async def delete_by_id(
         self,
         category_id: str,
     ) -> bool:
@@ -98,7 +98,7 @@ class CategoryMongodbRepo(ICategoryRepo):
         except:
             raise EntityNotFoundError(status_code=404, message="Category not found")
         
-    async def get_all_categories(
+    async def get_all(
         self,
     ) -> list[CategoryModel]:
         
@@ -108,40 +108,40 @@ class CategoryMongodbRepo(ICategoryRepo):
         except EntityNotFoundError:
             raise EntityNotFoundError(status_code=404, message="Categories not found")
         
-    async def get_categories_with_filter(
+    async def get_by_criteria(
         self,
-        filter: CategoryFilterInput,
+        criteria: CategoryFilterInput,
     ) -> list[CategoryModel]:
         
         try:
-            if filter.based_on == "parent-id":
-                return await self.get_parent_to_child(filter)
-            elif filter.based_on == "child-to-parent":
-                return await self.get_child_to_parent(filter)
+            if criteria.based_on == "parent-id":
+                return await self.get_tree_from_parent(criteria)
+            elif criteria.based_on == "child-to-parent":
+                return await self.get_ancestors(criteria.id)
         except EntityNotFoundError:
             raise EntityNotFoundError(status_code=404, message="Categories not found")
     
-    async def get_parent_to_child(
+    async def get_tree_from_parent(
         self,
-        filter: CategoryFilterInput,
+        criteria: CategoryFilterInput,
     ) -> list[CategoryModel]:
         
-        parents_list = await self.get_categories_by_parent_id(filter.id, filter.contains_danglings)
+        parents_list = await self.get_by_parent_id(criteria.id, criteria.contains_danglings)
             
         for parent in parents_list:
-            children = await self.get_categories_by_parent_id(parent.id, filter.contains_danglings)
+            children = await self.get_by_parent_id(parent.id, criteria.contains_danglings)
             
             if children:
                 setattr(parent, "children", children)
                 
         return parents_list
     
-    async def get_child_to_parent(
+    async def get_ancestors(
         self,
-        filter: CategoryFilterInput,
+        parent_id: str,
     ) ->  list[CategoryModel]:
         
-        async def get_categories(
+        async def _get_ancestors(
             p_id: str | None = None,
         ) -> list[CategoryModel]:
                      
@@ -149,20 +149,19 @@ class CategoryMongodbRepo(ICategoryRepo):
             if not p_id:
                 return result
                           
-            category = await self.get_category_by_id(p_id)
+            category = await self.get_by_id(p_id)
             result.append(category)
             if category.parent_id:
-                parent = await get_categories(category.parent_id)
+                parent = await _get_ancestors(category.parent_id)
                 result.extend(parent)
             
             return result
                         
-        categories = await get_categories(filter.id)
+        categories = await _get_ancestors(parent_id)
         categories.reverse()
-        
         return categories
                     
-    async def get_categories_by_parent_id(
+    async def get_by_parent_id(
         self,
         parent_id: str | None = None,
         contains_danglings: bool = False,
@@ -187,28 +186,28 @@ class CategoryMongodbRepo(ICategoryRepo):
         except:
             raise EntityNotFoundError(status_code=404, message="Categories not found")
         
-    async def get_categories_by_parent_id_listed(
+    async def get_descendants(
         self,
         parent_id: str,
     ) -> list[CategoryModel]:
         
-        async def get_categories(
+        async def _get_descendants(
             p_id: str | None = None,
         ) -> list[CategoryModel]:
             
             result: list[CategoryModel] = []
-            categories = await self.get_categories_by_parent_id(p_id)
+            categories = await self.get_by_parent_id(p_id)
                         
             for c in categories:
                 result.append(c)
                 if c and c.parent_id:
-                    result.extend(await get_categories(c.id))
+                    result.extend(await _get_descendants(c.id))
 
             return result
                 
-        return await get_categories(parent_id)
+        return await _get_descendants(parent_id)
     
-    async def delete_categories_by_parent_id(
+    async def delete_by_parent_id(
         self,
         parent_id: str,
     ) -> bool:
@@ -221,7 +220,7 @@ class CategoryMongodbRepo(ICategoryRepo):
         except:
             raise EntityNotFoundError(status_code=404, message="Categories not found")
         
-    async def delete_all_categories(
+    async def delete_all(
         self,
     ) -> bool:
         try:

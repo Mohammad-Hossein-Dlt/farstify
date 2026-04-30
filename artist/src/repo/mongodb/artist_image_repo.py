@@ -6,7 +6,7 @@ from src.infra.utils.convert_id import convert_object_id
 
 class ArtistImageMongodbRepo(IArtistImageRepo):
         
-    async def create_image(
+    async def create(
         self,
         image: ArtistImageModel,
     ) -> ArtistImageModel:
@@ -16,7 +16,7 @@ class ArtistImageMongodbRepo(IArtistImageRepo):
         ).insert()
         return ArtistImageModel.model_validate(new_artist, from_attributes=True)
         
-    async def get_image_by_id(
+    async def get_by_id(
         self,
         image_id: str,
     ) ->  ArtistImageModel:
@@ -33,7 +33,7 @@ class ArtistImageMongodbRepo(IArtistImageRepo):
         except:
             raise EntityNotFoundError(status_code=404, message="Artist not found")
 
-    async def update_image(
+    async def update(
         self,
         image: ArtistImageModel,
     ) ->  ArtistImageModel:
@@ -53,11 +53,11 @@ class ArtistImageMongodbRepo(IArtistImageRepo):
                 },
             )
                                     
-            return await self.get_image_by_id(image.id)
+            return await self.get_by_id(image.id)
         except EntityNotFoundError:
             raise
         
-    async def delete_image(
+    async def delete_by_id(
         self,
         image_id: str,
     ) -> bool:
@@ -71,7 +71,7 @@ class ArtistImageMongodbRepo(IArtistImageRepo):
         except:
             raise EntityNotFoundError(status_code=404, message="Artist not found")
         
-    async def get_images(
+    async def get_by_artist_id(
         self,
         artist_id: str,
     ) ->  list[ArtistImageModel]:
@@ -85,7 +85,7 @@ class ArtistImageMongodbRepo(IArtistImageRepo):
         except EntityNotFoundError:
             raise EntityNotFoundError(status_code=404, message="There are no artists")
     
-    async def delete_artist_images(
+    async def delete_by_artist_id(
         self,
         artist_id: str,
     ) -> bool:
@@ -98,7 +98,7 @@ class ArtistImageMongodbRepo(IArtistImageRepo):
         except:
             raise EntityNotFoundError(status_code=404, message="Artist not found")
     
-    async def delete_all_images(
+    async def delete_all(
         self,
     ) -> bool:
         try:

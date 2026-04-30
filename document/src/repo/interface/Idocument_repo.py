@@ -4,46 +4,39 @@ from src.domain.schemas.document.document_model import DocumentModel
 class IDocumentRepo(ABC):
         
     @abstractmethod
-    async def create_document(
+    async def create(
         document: DocumentModel,
     ) -> DocumentModel:
     
-        raise NotImplementedError         
+        raise NotImplementedError    
     
     @abstractmethod
-    async def get_document_by_name(
-        name: str,
-    ) -> DocumentModel:
-    
-        raise NotImplementedError        
-    
-    @abstractmethod
-    async def get_document_by_id(
+    async def get_by_id(
         document_id: str,
     ) ->  DocumentModel:
     
         raise NotImplementedError
     
     @abstractmethod
-    async def update_document(
+    async def update(
         document: DocumentModel,
     ) ->  DocumentModel:
     
         raise NotImplementedError
     
     @abstractmethod
-    async def delete_document(
+    async def delete_by_id(
         document_id: str,
     ) -> bool:
     
         raise NotImplementedError
     
     @abstractmethod
-    async def get_all_documents() -> list[DocumentModel]:
+    async def get_all() -> list[DocumentModel]:
     
         raise NotImplementedError
     
     @abstractmethod
-    async def delete_all_documents() -> bool:
+    async def delete_all() -> bool:
     
         raise NotImplementedError

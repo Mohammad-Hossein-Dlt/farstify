@@ -1,39 +1,22 @@
 from src.repo.interface.Idocument_repo import IDocumentRepo
 from src.domain.schemas.document.document_model import DocumentModel
 from src.infra.database.mongodb.collections.document_collection import DocumentCollection
-from src.infra.exceptions.exceptions import EntityNotFoundError, DuplicateEntityError
+from src.infra.exceptions.exceptions import EntityNotFoundError
 from src.infra.utils.convert_id import convert_object_id
 
 class DocumentMongodbRepo(IDocumentRepo):
         
-    async def create_document(
+    async def create(
         self,
         document: DocumentModel,
     ) -> DocumentModel:
+
+        new_document = await DocumentCollection(
+            **document.model_dump(exclude={"id", "_id"}),
+        ).insert()
+        return DocumentModel.model_validate(new_document, from_attributes=True)
         
-        try:
-            await self.get_document_by_name(document.name)
-            raise DuplicateEntityError(409, "document already exist")
-        except EntityNotFoundError:
-            new_document = await DocumentCollection(
-                **document.model_dump(exclude={"id", "_id"}),
-            ).insert()
-            return DocumentModel.model_validate(new_document, from_attributes=True)
-    
-    async def get_document_by_name(
-        self,
-        name: str,
-    ) -> DocumentModel:
-        
-        try:
-            result = await DocumentCollection.find_one(
-                DocumentCollection.name == name,
-            )
-            return DocumentModel.model_validate(result, from_attributes=True)
-        except:
-            raise EntityNotFoundError(status_code=404, message="document not found")
-        
-    async def get_document_by_id(
+    async def get_by_id(
         self,
         document_id: str,
     ) ->  DocumentModel:
@@ -50,7 +33,7 @@ class DocumentMongodbRepo(IDocumentRepo):
         except:
             raise EntityNotFoundError(status_code=404, message="document not found")
 
-    async def update_document(
+    async def update(
         self,
         document: DocumentModel,
     ) ->  DocumentModel:
@@ -71,11 +54,11 @@ class DocumentMongodbRepo(IDocumentRepo):
                 },
             )
                         
-            return await self.get_document_by_id(document.id)
+            return await self.get_by_id(document.id)
         except EntityNotFoundError:
             raise
         
-    async def delete_document(
+    async def delete_by_id(
         self,
         document_id: str,
     ) -> bool:
@@ -89,7 +72,7 @@ class DocumentMongodbRepo(IDocumentRepo):
         except:
             raise EntityNotFoundError(status_code=404, message="document not found")
     
-    async def get_all_documents(
+    async def get_all(
         self,
     ) -> list[DocumentModel]:    
         try:
@@ -98,7 +81,7 @@ class DocumentMongodbRepo(IDocumentRepo):
         except:
             raise EntityNotFoundError(status_code=404, message="document not found")
     
-    async def delete_all_documents(
+    async def delete_all(
         self,
     ) -> bool:
         try:

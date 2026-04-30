@@ -2,4 +2,4 @@ from pydantic import BaseModel
 
 class UpdateImageInput(BaseModel):
     id: str
-    is_main: bool = False
+    is_main: bool | None = None

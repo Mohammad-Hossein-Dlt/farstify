@@ -8,9 +8,10 @@ from datetime import datetime, timezone
 class DocumentCollection(DocumentModel, Document):
 
     id: PydanticObjectId = Field(default_factory=ObjectId)
-    name: str
+    title: str
     description: str | None = None
-    active: bool | None = None
+    single: bool = False
+    active: bool = False
     
     class Settings:
         name = "Document"

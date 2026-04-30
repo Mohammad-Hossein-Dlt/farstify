@@ -2,6 +2,7 @@ from pydantic import BaseModel
 
 class UpdateDocumentInput(BaseModel):
     id: int | str
-    name: str | None = None
+    title: str | None = None
     description: str | None = None
+    single: bool | None = None
     active: bool | None = None

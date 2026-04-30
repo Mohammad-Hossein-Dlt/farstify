@@ -7,8 +7,9 @@ from typing import Self
 class DocumentModel(CustomBaseModel):
     
     id: int | PydanticObjectId | None = None
-    name: str | None = None
+    title: str | None = None
     description: str | None = None
+    single: bool | None = None
     active: bool | None = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

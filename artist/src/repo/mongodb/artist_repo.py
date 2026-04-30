@@ -6,13 +6,13 @@ from src.infra.utils.convert_id import convert_object_id
 
 class ArtistMongodbRepo(IArtistRepo):
         
-    async def create_artist(
+    async def create(
         self,
         artist: ArtistModel,
     ) -> ArtistModel:
         
         try:
-            await self.get_artist_by_name(artist.name)
+            await self.get_by_name(artist.name)
             raise DuplicateEntityError(409, "Artist already exist")
         except EntityNotFoundError:
             new_artist = await ArtistCollection(
@@ -20,7 +20,7 @@ class ArtistMongodbRepo(IArtistRepo):
             ).insert()
             return ArtistModel.model_validate(new_artist, from_attributes=True)
     
-    async def get_artist_by_name(
+    async def get_by_name(
         self,
         name: str,
     ) -> ArtistModel:
@@ -33,7 +33,7 @@ class ArtistMongodbRepo(IArtistRepo):
         except:
             raise EntityNotFoundError(status_code=404, message="Artist not found")
         
-    async def get_artist_by_id(
+    async def get_by_id(
         self,
         artist_id: str,
     ) ->  ArtistModel:
@@ -50,7 +50,7 @@ class ArtistMongodbRepo(IArtistRepo):
         except:
             raise EntityNotFoundError(status_code=404, message="Artist not found")
 
-    async def update_artist(
+    async def update(
         self,
         artist: ArtistModel,
     ) ->  ArtistModel:
@@ -71,11 +71,11 @@ class ArtistMongodbRepo(IArtistRepo):
                 },
             )
                         
-            return await self.get_artist_by_id(artist.id)
+            return await self.get_by_id(artist.id)
         except EntityNotFoundError:
             raise
         
-    async def delete_artist(
+    async def delete_by_id(
         self,
         artist_id: str,
     ) -> bool:
@@ -89,7 +89,7 @@ class ArtistMongodbRepo(IArtistRepo):
         except:
             raise EntityNotFoundError(status_code=404, message="Artist not found")
     
-    async def get_all_artists(
+    async def get_all(
         self,
     ) -> list[ArtistModel]:    
         try:
@@ -98,7 +98,7 @@ class ArtistMongodbRepo(IArtistRepo):
         except:
             raise EntityNotFoundError(status_code=404, message="Artist not found")
     
-    async def delete_all_artists(
+    async def delete_all(
         self,
     ) -> bool:
         try:

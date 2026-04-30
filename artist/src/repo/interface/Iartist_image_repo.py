@@ -4,48 +4,48 @@ from src.domain.schemas.artist.artist_image import ArtistImageModel
 class IArtistImageRepo(ABC):
         
     @abstractmethod
-    async def create_image(
+    async def create(
         image: ArtistImageModel,
     ) -> ArtistImageModel:
     
-        raise NotImplementedError               
+        raise NotImplementedError           
     
     @abstractmethod
-    async def get_image_by_id(
+    async def get_by_id(
         image_id: str,
     ) ->  ArtistImageModel:
     
         raise NotImplementedError
     
     @abstractmethod
-    async def update_image(
+    async def update(
         image: ArtistImageModel,
     ) ->  ArtistImageModel:
     
         raise NotImplementedError
     
     @abstractmethod
-    async def delete_image(
+    async def delete_by_id(
         image_id: str,
     ) -> bool:
     
         raise NotImplementedError
     
     @abstractmethod
-    async def get_images(
+    async def get_by_artist_id(
         artist_id: str,
     ) ->  list[ArtistImageModel]:
     
         raise NotImplementedError
     
     @abstractmethod
-    async def delete_artist_images(
+    async def delete_by_artist_id(
         artist_id: str,
     ) -> bool:
     
         raise NotImplementedError
     
     @abstractmethod
-    async def delete_all_images() -> bool:
+    async def delete_all() -> bool:
     
         raise NotImplementedError

@@ -6,7 +6,7 @@ from src.infra.utils.convert_id import convert_object_id
 
 class DocumentLinkMongodbRepo(IDocumentLinkRepo):
         
-    async def create_link(
+    async def create(
         self,
         link: DocumentLinkModel,
     ) -> DocumentLinkModel:
@@ -16,7 +16,7 @@ class DocumentLinkMongodbRepo(IDocumentLinkRepo):
         ).insert()
         return DocumentLinkModel.model_validate(new_link, from_attributes=True)
         
-    async def get_link_by_id(
+    async def get_by_id(
         self,
         link_id: str,
     ) ->  DocumentLinkModel:
@@ -33,7 +33,7 @@ class DocumentLinkMongodbRepo(IDocumentLinkRepo):
         except:
             raise EntityNotFoundError(status_code=404, message="document not found")
 
-    async def update_link(
+    async def update(
         self,
         link: DocumentLinkModel,
     ) ->  DocumentLinkModel:
@@ -53,11 +53,11 @@ class DocumentLinkMongodbRepo(IDocumentLinkRepo):
                 },
             )
                         
-            return await self.get_link_by_id(link.id)
+            return await self.get_by_id(link.id)
         except EntityNotFoundError:
             raise
         
-    async def delete_link(
+    async def delete_by_id(
         self,
         link_id: str,
     ) -> bool:
@@ -71,7 +71,7 @@ class DocumentLinkMongodbRepo(IDocumentLinkRepo):
         except:
             raise EntityNotFoundError(status_code=404, message="document not found")
         
-    async def get_links(
+    async def get_by_document_id(
         self,
         document_id: str,
     ) ->  list[DocumentLinkModel]:
@@ -85,7 +85,7 @@ class DocumentLinkMongodbRepo(IDocumentLinkRepo):
         except EntityNotFoundError:
             raise EntityNotFoundError(status_code=404, message="There are no documents")
     
-    async def delete_document_links(
+    async def delete_by_document_id(
         self,
         document_id: str,
     ) -> bool:
@@ -98,7 +98,7 @@ class DocumentLinkMongodbRepo(IDocumentLinkRepo):
         except:
             raise EntityNotFoundError(status_code=404, message="document not found")
     
-    async def delete_all_links(
+    async def delete_all(
         self,
     ) -> bool:
         try:
