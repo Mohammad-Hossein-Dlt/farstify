@@ -1,9 +1,15 @@
 from pymongo.asynchronous.database import AsyncDatabase
-from pymongo.asynchronous.mongo_client import AsyncMongoClient
-from .collections.document_collection import DocumentCollection
-from .collections.document_image_collection import DocumentImageCollection
-from .collections.document_link_collection import DocumentLinkCollection
 from beanie import init_beanie
+from pymongo.asynchronous.mongo_client import AsyncMongoClient
+
+from .collections.document.document_collection import DocumentCollection
+from .collections.document.document_image_collection import DocumentImageCollection
+from .collections.document.document_link_collection import DocumentLinkCollection
+
+from .collections.episode.episode_collection import EpisodeCollection
+from .collections.episode.episode_image_collection import EpisodeImageCollection
+from .collections.episode.episode_link_collection import EpisodeLinkCollection
+
 
 
 async def init_mongodb_client(
@@ -32,6 +38,10 @@ async def init_mongodb_client(
             DocumentCollection,
             DocumentImageCollection,
             DocumentLinkCollection,
+            
+            EpisodeCollection,
+            EpisodeImageCollection,
+            EpisodeLinkCollection
         ],
     )
     

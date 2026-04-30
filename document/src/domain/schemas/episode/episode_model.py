@@ -10,7 +10,7 @@ class EpisodeModel(CustomBaseModel):
     document_id: int | PydanticObjectId | None = None
     title: str | None = None
     description: str | None = None
-    duration: int | None = None
+    duration: float | None = None
     active: bool | None = None
     order: int | None = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

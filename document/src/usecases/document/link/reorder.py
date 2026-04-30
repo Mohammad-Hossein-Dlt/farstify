@@ -1,31 +1,31 @@
-from src.repo.interface.Iartist_link_repo import IArtistLinkRepo
-from src.domain.schemas.artist.artist_link import ArtistLinkModel
+from src.repo.interface.document.Idocument_link_repo import IDocumentLinkRepo
+from src.domain.schemas.document.document_link import DocumentLinkModel
 from src.infra.exceptions.exceptions import AppBaseException, OperationFailureException
 
 class ReorderLinks:
     
     def __init__(
         self,
-        artist_link_repo: IArtistLinkRepo,
+        document_link_repo: IDocumentLinkRepo,
     ):
 
-        self.artist_link_repo = artist_link_repo
+        self.document_link_repo = document_link_repo
     
     async def execute(
         self,
-        artist_id: str,
+        document_id: str,
         link_ids: list[str],
-    ) -> list[ArtistLinkModel]:
+    ) -> list[DocumentLinkModel]:
         
         try:
-            links_list: list[ArtistLinkModel] = await self.artist_link_repo.get_by_artist_id(artist_id)
+            links_list: list[DocumentLinkModel] = await self.document_link_repo.get_by_document_id(document_id)
             for index, links_id in enumerate(link_ids):
                 for link in links_list:
                     if str(link.id) == links_id:
                         link.order = index
-                        await self.artist_link_repo.update(link)
+                        await self.document_link_repo.update(link)
 
-            return await self.artist_link_repo.get_by_artist_id(artist_id)        
+            return await self.document_link_repo.get_by_document_id(document_id)        
         except AppBaseException:
             raise
         except:
