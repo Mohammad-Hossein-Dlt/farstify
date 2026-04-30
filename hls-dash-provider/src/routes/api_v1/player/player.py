@@ -10,7 +10,7 @@ from src.infra.exceptions.exceptions import AppBaseException
 @router.get(
     "/{object_name:path}",
 )
-async def health_check(
+async def player(
     request: Request,
     format: Format,
     object_name: str,
