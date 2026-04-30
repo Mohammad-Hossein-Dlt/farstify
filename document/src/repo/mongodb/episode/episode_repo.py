@@ -71,6 +71,34 @@ class EpisodeMongodbRepo(IEpisodeRepo):
             return bool(delete_episode.deleted_count)
         except:
             raise EntityNotFoundError(status_code=404, message="episode not found")
+        
+    async def get_by_document_id(
+        self,
+        document_id: str,
+    ) ->  list[EpisodeModel]:
+        
+        try:
+            document_id = convert_object_id(document_id)
+            episodes_list = await EpisodeCollection.find_many(
+                EpisodeCollection.document_id == document_id,
+            ).to_list()                       
+            return [ EpisodeModel.model_validate(episode, from_attributes=True) for episode in episodes_list ]
+        except:
+            raise EntityNotFoundError(status_code=404, message="episode not found")
+        
+    async def delete_by_document_id(
+        self,
+        document_id: str,
+    ) ->  bool:
+        
+        try:
+            document_id = convert_object_id(document_id)
+            delete_episodes = await EpisodeCollection.find(
+                EpisodeCollection.document_id == document_id,
+            ).delete()                       
+            return bool(delete_episodes.deleted_count) 
+        except:
+            raise EntityNotFoundError(status_code=404, message="episode not found")
     
     async def get_all(
         self,

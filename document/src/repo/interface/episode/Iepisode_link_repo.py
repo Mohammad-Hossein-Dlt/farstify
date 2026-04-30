@@ -13,14 +13,14 @@ class IEpisodeLinkRepo(ABC):
     @abstractmethod
     async def get_by_id(
         link_id: str,
-    ) ->  EpisodeLinkModel:
+    ) -> EpisodeLinkModel:
     
         raise NotImplementedError
     
     @abstractmethod
     async def update(
         link: EpisodeLinkModel,
-    ) ->  EpisodeLinkModel:
+    ) -> EpisodeLinkModel:
     
         raise NotImplementedError
     
@@ -34,7 +34,7 @@ class IEpisodeLinkRepo(ABC):
     @abstractmethod
     async def get_by_episode_id(
         episode_id: str,
-    ) ->  list[EpisodeLinkModel]:
+    ) -> list[EpisodeLinkModel]:
     
         raise NotImplementedError
     

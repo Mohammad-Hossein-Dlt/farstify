@@ -13,20 +13,34 @@ class IDocumentRepo(ABC):
     @abstractmethod
     async def get_by_id(
         document_id: str,
-    ) ->  DocumentModel:
+    ) -> DocumentModel:
     
         raise NotImplementedError
     
     @abstractmethod
     async def update(
         document: DocumentModel,
-    ) ->  DocumentModel:
+    ) -> DocumentModel:
     
         raise NotImplementedError
     
     @abstractmethod
     async def delete_by_id(
         document_id: str,
+    ) -> bool:
+    
+        raise NotImplementedError
+    
+    @abstractmethod
+    async def get_by_artist_id(
+        artist_id: str,
+    ) -> list[DocumentModel]:
+    
+        raise NotImplementedError
+    
+    @abstractmethod
+    async def delete_by_artist_id(
+        artist_id: str,
     ) -> bool:
     
         raise NotImplementedError

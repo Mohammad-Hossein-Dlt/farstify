@@ -19,7 +19,7 @@ class DocumentImageMongodbRepo(IDocumentImageRepo):
     async def get_by_id(
         self,
         image_id: str,
-    ) ->  DocumentImageModel:
+    ) -> DocumentImageModel:
         
         try:
                                     
@@ -36,7 +36,7 @@ class DocumentImageMongodbRepo(IDocumentImageRepo):
     async def update(
         self,
         image: DocumentImageModel,
-    ) ->  DocumentImageModel:
+    ) -> DocumentImageModel:
         
         try:               
             
@@ -74,7 +74,7 @@ class DocumentImageMongodbRepo(IDocumentImageRepo):
     async def get_by_document_id(
         self,
         document_id: str,
-    ) ->  list[DocumentImageModel]:
+    ) -> list[DocumentImageModel]:
         
         try:
             document_id = convert_object_id(document_id)

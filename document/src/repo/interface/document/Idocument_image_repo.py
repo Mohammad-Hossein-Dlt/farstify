@@ -13,14 +13,14 @@ class IDocumentImageRepo(ABC):
     @abstractmethod
     async def get_by_id(
         image_id: str,
-    ) ->  DocumentImageModel:
+    ) -> DocumentImageModel:
     
         raise NotImplementedError
     
     @abstractmethod
     async def update(
         image: DocumentImageModel,
-    ) ->  DocumentImageModel:
+    ) -> DocumentImageModel:
     
         raise NotImplementedError
     
@@ -34,7 +34,7 @@ class IDocumentImageRepo(ABC):
     @abstractmethod
     async def get_by_document_id(
         document_id: str,
-    ) ->  list[DocumentImageModel]:
+    ) -> list[DocumentImageModel]:
     
         raise NotImplementedError
     

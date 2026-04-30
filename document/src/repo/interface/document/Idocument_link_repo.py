@@ -13,14 +13,14 @@ class IDocumentLinkRepo(ABC):
     @abstractmethod
     async def get_by_id(
         link_id: str,
-    ) ->  DocumentLinkModel:
+    ) -> DocumentLinkModel:
     
         raise NotImplementedError
     
     @abstractmethod
     async def update(
         link: DocumentLinkModel,
-    ) ->  DocumentLinkModel:
+    ) -> DocumentLinkModel:
     
         raise NotImplementedError
     
@@ -34,7 +34,7 @@ class IDocumentLinkRepo(ABC):
     @abstractmethod
     async def get_by_document_id(
         document_id: str,
-    ) ->  list[DocumentLinkModel]:
+    ) -> list[DocumentLinkModel]:
     
         raise NotImplementedError
     

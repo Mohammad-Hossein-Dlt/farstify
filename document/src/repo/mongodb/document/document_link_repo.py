@@ -19,7 +19,7 @@ class DocumentLinkMongodbRepo(IDocumentLinkRepo):
     async def get_by_id(
         self,
         link_id: str,
-    ) ->  DocumentLinkModel:
+    ) -> DocumentLinkModel:
         
         try:
                                     
@@ -36,7 +36,7 @@ class DocumentLinkMongodbRepo(IDocumentLinkRepo):
     async def update(
         self,
         link: DocumentLinkModel,
-    ) ->  DocumentLinkModel:
+    ) -> DocumentLinkModel:
         
         try:               
             
@@ -74,7 +74,7 @@ class DocumentLinkMongodbRepo(IDocumentLinkRepo):
     async def get_by_document_id(
         self,
         document_id: str,
-    ) ->  list[DocumentLinkModel]:
+    ) -> list[DocumentLinkModel]:
         
         try:
             document_id = convert_object_id(document_id)

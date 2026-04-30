@@ -19,7 +19,7 @@ class EpisodeImageMongodbRepo(IEpisodeImageRepo):
     async def get_by_id(
         self,
         image_id: str,
-    ) ->  EpisodeImageModel:
+    ) -> EpisodeImageModel:
         
         try:
                                     
@@ -36,7 +36,7 @@ class EpisodeImageMongodbRepo(IEpisodeImageRepo):
     async def update(
         self,
         image: EpisodeImageModel,
-    ) ->  EpisodeImageModel:
+    ) -> EpisodeImageModel:
         
         try:               
             
@@ -74,7 +74,7 @@ class EpisodeImageMongodbRepo(IEpisodeImageRepo):
     async def get_by_episode_id(
         self,
         episode_id: str,
-    ) ->  list[EpisodeImageModel]:
+    ) -> list[EpisodeImageModel]:
         
         try:
             episode_id = convert_object_id(episode_id)

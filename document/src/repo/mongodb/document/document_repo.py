@@ -19,7 +19,7 @@ class DocumentMongodbRepo(IDocumentRepo):
     async def get_by_id(
         self,
         document_id: str,
-    ) ->  DocumentModel:
+    ) -> DocumentModel:
         
         try:
                                     
@@ -36,7 +36,7 @@ class DocumentMongodbRepo(IDocumentRepo):
     async def update(
         self,
         document: DocumentModel,
-    ) ->  DocumentModel:
+    ) -> DocumentModel:
         
         try:               
             
@@ -69,6 +69,34 @@ class DocumentMongodbRepo(IDocumentRepo):
                 DocumentCollection.id == document_id,
             ).delete()                       
             return bool(delete_document.deleted_count)
+        except:
+            raise EntityNotFoundError(status_code=404, message="document not found")
+        
+    async def get_by_artist_id(
+        self,
+        artist_id: str,
+    ) -> list[DocumentModel]:
+        
+        try:
+            artist_id = convert_object_id(artist_id)
+            documents_list = await DocumentCollection.find_many(
+                DocumentCollection.artist_id == artist_id,
+            ).to_list()                       
+            return [ DocumentModel.model_validate(document, from_attributes=True) for document in documents_list ]
+        except:
+            raise EntityNotFoundError(status_code=404, message="document not found")
+        
+    async def delete_by_artist_id(
+        self,
+        artist_id: str,
+    ) -> bool:
+        
+        try:
+            artist_id = convert_object_id(artist_id)
+            delete_documents = await DocumentCollection.find(
+                DocumentCollection.artist_id == artist_id,
+            ).delete()                       
+            return bool(delete_documents.deleted_count) 
         except:
             raise EntityNotFoundError(status_code=404, message="document not found")
     

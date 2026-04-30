@@ -13,14 +13,14 @@ class IEpisodeImageRepo(ABC):
     @abstractmethod
     async def get_by_id(
         image_id: str,
-    ) ->  EpisodeImageModel:
+    ) -> EpisodeImageModel:
     
         raise NotImplementedError
     
     @abstractmethod
     async def update(
         image: EpisodeImageModel,
-    ) ->  EpisodeImageModel:
+    ) -> EpisodeImageModel:
     
         raise NotImplementedError
     
@@ -34,8 +34,8 @@ class IEpisodeImageRepo(ABC):
     @abstractmethod
     async def get_by_episode_id(
         episode_id: str,
-    ) ->  list[EpisodeImageModel]:
-    
+    ) -> list[EpisodeImageModel]:
+
         raise NotImplementedError
     
     @abstractmethod

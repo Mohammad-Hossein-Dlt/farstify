@@ -13,20 +13,34 @@ class IEpisodeRepo(ABC):
     @abstractmethod
     async def get_by_id(
         episode_id: str,
-    ) ->  EpisodeModel:
+    ) -> EpisodeModel:
     
         raise NotImplementedError
     
     @abstractmethod
     async def update(
         episode: EpisodeModel,
-    ) ->  EpisodeModel:
+    ) -> EpisodeModel:
     
         raise NotImplementedError
     
     @abstractmethod
     async def delete_by_id(
         episode_id: str,
+    ) -> bool:
+    
+        raise NotImplementedError
+    
+    @abstractmethod
+    async def get_by_document_id(
+        document_id: str,
+    ) -> list[EpisodeModel]:
+    
+        raise NotImplementedError
+    
+    @abstractmethod
+    async def delete_by_document_id(
+        document_id: str,
     ) -> bool:
     
         raise NotImplementedError

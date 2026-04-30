@@ -19,7 +19,7 @@ class EpisodeLinkMongodbRepo(IEpisodeLinkRepo):
     async def get_by_id(
         self,
         link_id: str,
-    ) ->  EpisodeLinkModel:
+    ) -> EpisodeLinkModel:
         
         try:
                                     
@@ -36,7 +36,7 @@ class EpisodeLinkMongodbRepo(IEpisodeLinkRepo):
     async def update(
         self,
         link: EpisodeLinkModel,
-    ) ->  EpisodeLinkModel:
+    ) -> EpisodeLinkModel:
         
         try:               
             
@@ -74,7 +74,7 @@ class EpisodeLinkMongodbRepo(IEpisodeLinkRepo):
     async def get_by_episode_id(
         self,
         episode_id: str,
-    ) ->  list[EpisodeLinkModel]:
+    ) -> list[EpisodeLinkModel]:
         
         try:
             episode_id = convert_object_id(episode_id)

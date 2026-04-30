@@ -29,9 +29,9 @@ class DeleteEpisode:
         try:
             status = False
             episode: EpisodeModel = await self.episode_repo.get_by_id(episode_id)
-            check_path = await self.storage_repo.path_objects(str(episode.id))
+            check_path = await self.storage_repo.path_objects(f"{episode.document_id}/{episode.id}")
             if check_path:
-                delete_objects = await self.storage_repo.delete_objects(str(episode.id))
+                delete_objects = await self.storage_repo.delete_objects(f"{episode.document_id}/{episode.id}")
                 if delete_objects:
                     await self.episode_image_repo.delete_by_episode_id(episode_id)
                     await self.episode_link_repo.delete_by_episode_id(episode_id)
