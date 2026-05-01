@@ -57,7 +57,7 @@ class DashConverter:
                 
                 result = await self.storage_repo.upload_object(
                     str(m4s_path),
-                    str(object_path.parent) + "/" + m4s_path.name,
+                    str(object_path.parent).replace("\\", "/") + "/" + m4s_path.name,
                 )
                 
                 with open(mpd_path, "r", encoding="utf-8") as f:

@@ -39,10 +39,9 @@ class CreateCategory:
             category_model: CategoryModel = CategoryModel.model_validate(entity, from_attributes=True)
             category: CategoryModel = await self.category_repo.create(category_model)
             
-            if all([file, file_name, file_size, content_type]):
-                
+            if all([file, file_name, file_size, content_type]):                
+                cover_name = secrets.token_hex(nbytes=5) + Path(file_name).suffix
                 try:
-                    cover_name = secrets.token_hex(nbytes=5) + Path(file_name).suffix
                     result = await self.storage_repo.upload_object(
                         file,
                         cover_name,

@@ -5,8 +5,8 @@ from . import (
     update,
     delete_by_id,
     reorder,
-    get_by_criteria,
-    delete_by_document_id,
+    get_by_episode_id,
+    delete_by_episode_id,
 )
 
 __all__ = [
@@ -16,6 +16,6 @@ __all__ = [
     "update",
     "delete_by_id",
     "reorder",
-    "get_by_criteria",
-    "delete_by_document_id",
+    "get_by_episode_id",
+    "delete_by_episode_id",
 ]

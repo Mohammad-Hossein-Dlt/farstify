@@ -14,100 +14,100 @@ services:
   #   ports:
   #     - 8001:80
 
-  # 16k-service:
-  #   working_dir: /app
-  #   build:
-  #     context: ./hls-dash-provider
-  #     dockerfile: Dockerfile
-  #   container_name: 16k_service
-  #   restart: always
-  #   env_file:
-  #     - .env
-  #   depends_on:
-  #     - broker
-  #     - rustfs
-  #   tmpfs:
-  #     - /tmp:rw,size=2G,mode=1777
-  #   environment:
-  #     # - TMPDIR=/tmp
-  #     - CONVERTER_PARAMS__BITRATE=16_000
-  #     - RABBITMQ__QUEUE=16k-queue
+  16k-service:
+    working_dir: /app
+    build:
+      context: ./hls-dash-provider
+      dockerfile: Dockerfile
+    container_name: 16k_service
+    restart: always
+    env_file:
+      - .env
+    depends_on:
+      - broker
+      - rustfs
+    tmpfs:
+      - /tmp:rw,size=2G,mode=1777
+    environment:
+      # - TMPDIR=/tmp
+      - CONVERTER_PARAMS__BITRATE=16_000
+      - RABBITMQ__QUEUE=16k-queue
 
-  # 32k-service:
-  #   working_dir: /app
-  #   build:
-  #     context: ./hls-dash-provider
-  #     dockerfile: Dockerfile
-  #   container_name: 32k_service
-  #   restart: always
-  #   env_file:
-  #     - .env
-  #   depends_on:
-  #     - broker
-  #     - rustfs
-  #   tmpfs:
-  #     - /tmp:rw,size=2G,mode=1777
-  #   environment:
-  #     # - TMPDIR=/tmp
-  #     - CONVERTER_PARAMS__BITRATE=32_000
-  #     - RABBITMQ__QUEUE=32k-queue
+  32k-service:
+    working_dir: /app
+    build:
+      context: ./hls-dash-provider
+      dockerfile: Dockerfile
+    container_name: 32k_service
+    restart: always
+    env_file:
+      - .env
+    depends_on:
+      - broker
+      - rustfs
+    tmpfs:
+      - /tmp:rw,size=2G,mode=1777
+    environment:
+      # - TMPDIR=/tmp
+      - CONVERTER_PARAMS__BITRATE=32_000
+      - RABBITMQ__QUEUE=32k-queue
 
-  # 64k-service:
-  #   working_dir: /app
-  #   build:
-  #     context: ./hls-dash-provider
-  #     dockerfile: Dockerfile
-  #   container_name: 64k_service
-  #   restart: always
-  #   env_file:
-  #     - .env
-  #   depends_on:
-  #     - broker
-  #     - rustfs
-  #   tmpfs:
-  #     - /tmp:rw,size=2G,mode=1777
-  #   environment:
-  #     # - TMPDIR=/tmp
-  #     - CONVERTER_PARAMS__BITRATE=64_000
-  #     - RABBITMQ__QUEUE=64k-queue
+  64k-service:
+    working_dir: /app
+    build:
+      context: ./hls-dash-provider
+      dockerfile: Dockerfile
+    container_name: 64k_service
+    restart: always
+    env_file:
+      - .env
+    depends_on:
+      - broker
+      - rustfs
+    tmpfs:
+      - /tmp:rw,size=2G,mode=1777
+    environment:
+      # - TMPDIR=/tmp
+      - CONVERTER_PARAMS__BITRATE=64_000
+      - RABBITMQ__QUEUE=64k-queue
 
-  # 128k-service:
-  #   working_dir: /app
-  #   build:
-  #     context: ./hls-dash-provider
-  #     dockerfile: Dockerfile
-  #   container_name: 128k_service
-  #   restart: always
-  #   env_file:
-  #     - .env
-  #   depends_on:
-  #     - broker
-  #     - rustfs
-  #   tmpfs:
-  #     - /tmp:rw,size=2G,mode=1777
-  #   environment:
-  #     # - TMPDIR=/tmp
-  #     - CONVERTER_PARAMS__BITRATE=128_000
-  #     - RABBITMQ__QUEUE=128k-queue
+  128k-service:
+    working_dir: /app
+    build:
+      context: ./hls-dash-provider
+      dockerfile: Dockerfile
+    container_name: 128k_service
+    restart: always
+    env_file:
+      - .env
+    depends_on:
+      - broker
+      - rustfs
+    tmpfs:
+      - /tmp:rw,size=2G,mode=1777
+    environment:
+      # - TMPDIR=/tmp
+      - CONVERTER_PARAMS__BITRATE=128_000
+      - RABBITMQ__QUEUE=128k-queue
 
-  # 256k-service:
-  #   working_dir: /app
-  #   build:
-  #     context: ./hls-dash-provider
-  #     dockerfile: Dockerfile
-  #   container_name: 256k_service
-  #   restart: always
-  #   env_file:
-  #     - .env
-  #   depends_on:
-  #     - broker
-  #     - rustfs
-  #   tmpfs:
-  #     - /tmp:rw,size=2G,mode=1777
-  #   environment:
-  #     # - TMPDIR=/tmp
-  #     - CONVERTER_PARAMS__BITRATE=256_000
-  #     - RABBITMQ__QUEUE=256k-queue
+  256k-service:
+    working_dir: /app
+    build:
+      context: ./hls-dash-provider
+      dockerfile: Dockerfile
+    container_name: 256k_service
+    restart: always
+    env_file:
+      - .env
+    depends_on:
+      - broker
+      - rustfs
+    tmpfs:
+      - /tmp:rw,size=2G,mode=1777
+    environment:
+      # - TMPDIR=/tmp
+      - CONVERTER_PARAMS__BITRATE=256_000
+      - RABBITMQ__QUEUE=256k-queue
 
   # dash-manifest-service:
   #   working_dir: /app

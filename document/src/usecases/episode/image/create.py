@@ -5,9 +5,9 @@ from src.models.schemas.episode.create_image_input import CreateImageInput
 from src.domain.schemas.episode.episode_model import EpisodeModel
 from src.domain.schemas.episode.episode_image import EpisodeImageModel
 from src.infra.exceptions.exceptions import AppBaseException, OperationFailureException
-from pathlib import Path
 import tempfile
 import secrets
+from pathlib import Path
 
 class CreateImage:
     
@@ -32,17 +32,16 @@ class CreateImage:
     ) -> EpisodeImageModel:
         
         try:
-            
-            episode: EpisodeModel = await self.episode_repo.get_by_id(entity.episode_id)
             image_model: EpisodeImageModel = EpisodeImageModel.model_validate(entity, from_attributes=True)
-
+            episode: EpisodeModel = await self.episode_repo.get_by_id(entity.episode_id)
             if all([file, file_name, file_size, content_type]):
-                
+                cover_name = secrets.token_hex(nbytes=5) + Path(file_name).suffix
+                base_path = f"{episode.document_id}/{episode.id}/image"
+                new_object_name = f"{base_path}/{cover_name}"
                 try:
-                    cover_name = secrets.token_hex(nbytes=5) + Path(file_name).suffix
                     result = await self.storage_repo.upload_object(
                         file,
-                        f"{episode.id}/" + cover_name,
+                        new_object_name,
                         file_size,
                         content_type,
                     )
@@ -52,7 +51,7 @@ class CreateImage:
                 except:
                     if image_model.id:
                         await self.episode_image_repo.delete_by_id(image_model.id)
-                    await self.storage_repo.delete_object(f"{episode.id}/" + cover_name)
+                    await self.storage_repo.delete_object(new_object_name)
 
             return image_model
                         

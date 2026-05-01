@@ -57,7 +57,7 @@ class HlsConverter:
                 
                 result = await self.storage_repo.upload_objects(
                     temp,
-                    f"{object_path.parent}/",
+                    str(object_path.parent).replace("\\", "/") + "/",
                 )
                 
                 data = await self.save_cache_usecase.execute(

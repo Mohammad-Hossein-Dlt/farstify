@@ -35,24 +35,27 @@ class UpdateImage:
             image_model: ArtistImageModel = ArtistImageModel.model_validate(entity, from_attributes=True)
             image: ArtistImageModel = await self.artist_image_repo.get_by_id(entity.id)
             artist: ArtistModel = await self.artist_repo.get_by_id(image.artist_id)
-            pre_cover = image.cover
+            prev_cover = image.cover
             if all([file, file_name, file_size, content_type]):
+                cover_name = secrets.token_hex(nbytes=5) + Path(file_name).suffix
+                base_path = f"{artist.id}/image"
+                new_object_name = f"{base_path}/{cover_name}"
+                prev_object_name = f"{base_path}/{prev_cover}"
                 try:
-                    cover_name = secrets.token_hex(nbytes=5) + Path(file_name).suffix
                     result = await self.storage_repo.upload_object(
                         file,
-                        f"{artist.id}/" + cover_name,
+                        new_object_name,
                         file_size,
                         content_type,
                     )      
                     if result:
                         image_model.cover = cover_name
                         image: ArtistImageModel = await self.artist_image_repo.update(image_model)
-                        await self.storage_repo.delete_object(f"{artist.id}/" + pre_cover)
+                        await self.storage_repo.delete_object(prev_object_name)
                 except:
-                    image.cover = pre_cover
+                    image.cover = prev_cover
                     image: ArtistImageModel = await self.artist_image_repo.update(image)
-                    await self.storage_repo.delete_object(f"{artist.id}/" + cover_name)
+                    await self.storage_repo.delete_object(new_object_name)
             else:
                 image: ArtistImageModel = await self.artist_image_repo.update(image_model)
 

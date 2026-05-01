@@ -32,17 +32,16 @@ class CreateImage:
     ) -> ArtistImageModel:
         
         try:
-            
-            artist: ArtistModel = await self.artist_repo.get_by_id(entity.artist_id)
             image_model: ArtistImageModel = ArtistImageModel.model_validate(entity, from_attributes=True)
-
+            artist: ArtistModel = await self.artist_repo.get_by_id(entity.artist_id)
             if all([file, file_name, file_size, content_type]):
-                
+                cover_name = secrets.token_hex(nbytes=5) + Path(file_name).suffix
+                base_path = f"{artist.id}/image"
+                new_object_name = f"{base_path}/{cover_name}"
                 try:
-                    cover_name = secrets.token_hex(nbytes=5) + Path(file_name).suffix
                     result = await self.storage_repo.upload_object(
                         file,
-                        f"{artist.id}/" + cover_name,
+                        new_object_name,
                         file_size,
                         content_type,
                     )
@@ -52,7 +51,7 @@ class CreateImage:
                 except:
                     if image_model.id:
                         await self.artist_image_repo.delete_by_id(image_model.id)
-                    await self.storage_repo.delete_object(f"{artist.id}/" + cover_name)
+                    await self.storage_repo.delete_object(new_object_name)
 
             return image_model
                         

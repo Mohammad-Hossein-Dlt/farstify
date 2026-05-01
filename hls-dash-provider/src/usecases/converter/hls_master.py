@@ -56,7 +56,7 @@ class CreateHlsMaster:
                 
                 result = await self.storage_repo.upload_object(
                     str(m3u8_path),
-                    str(object_path.parent) + "/" + m3u8_path.name,
+                    str(object_path.parent).replace("\\", "/") + "/" + m3u8_path.name,
                 )
 
             if result:

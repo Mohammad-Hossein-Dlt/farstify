@@ -13,6 +13,7 @@ class MinioRepo(IStorageRepo):
         client: Minio,
         bucket_name: str,
     ):
+        
         self.client = client
         self.bucket_name = bucket_name
     
@@ -32,6 +33,7 @@ class MinioRepo(IStorageRepo):
         
         try:
             bucket_name = bucket_name or self.bucket_name
+            await self.setup_bucket(bucket_name)
             objects = self.client.list_objects(
                 bucket_name=bucket_name,
                 prefix=path,
@@ -75,6 +77,7 @@ class MinioRepo(IStorageRepo):
         
         try:
             bucket_name = bucket_name or self.bucket_name
+            await self.setup_bucket(bucket_name)
             return self.client.stat_object(bucket_name, object_name).metadata
         except minio.error.S3Error as e:
             print(f"Error: {e}")
@@ -88,6 +91,7 @@ class MinioRepo(IStorageRepo):
         
         try:
             bucket_name = bucket_name or self.bucket_name
+            await self.setup_bucket(bucket_name)
             return self.client.get_object(bucket_name, object_name)
         except minio.error.S3Error as e:
             print(f"Error: {e}")
@@ -101,6 +105,7 @@ class MinioRepo(IStorageRepo):
         
         try:
             bucket_name = bucket_name or self.bucket_name
+            await self.setup_bucket(bucket_name)
             return self.client.get_presigned_url("GET", bucket_name, object_name)
         except minio.error.S3Error as e:
             print(f"Error: {e}")
@@ -114,6 +119,7 @@ class MinioRepo(IStorageRepo):
         
         try:
             bucket_name = bucket_name or self.bucket_name
+            await self.setup_bucket(bucket_name)
             self.client.remove_object(bucket_name, object_name)
             return True 
         except minio.error.S3Error as e:
@@ -151,6 +157,7 @@ class MinioRepo(IStorageRepo):
         
         try:
             bucket_name = bucket_name or self.bucket_name
+            await self.setup_bucket(bucket_name)
             objects_list = await self.path_objects(path, bucket_name)
             delete_list = [ DeleteObject(name=i) for i in objects_list ]
             if delete_list:

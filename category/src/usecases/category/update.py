@@ -41,12 +41,11 @@ class UpdateCategory:
             category_model: CategoryModel = CategoryModel.model_validate(entity, from_attributes=True)
             category: CategoryModel = await self.category_repo.update(category_model)
             
-            pre_cover = category.cover
+            prev_cover = category.cover
             
             if all([file, file_name, file_size, content_type]):
-                
+                cover_name = secrets.token_hex(nbytes=5) + Path(file_name).suffix
                 try:
-                    cover_name = secrets.token_hex(nbytes=5) + Path(file_name).suffix
                     result = await self.storage_repo.upload_object(
                         file,
                         cover_name,
@@ -56,10 +55,10 @@ class UpdateCategory:
                     if result:
                         category.cover = cover_name 
                         category = await self.category_repo.update(category)
-                        if category and pre_cover:
-                            await self.storage_repo.delete_object(pre_cover)
+                        if category and prev_cover:
+                            await self.storage_repo.delete_object(prev_cover)
                 except:
-                    category.cover = pre_cover
+                    category.cover = prev_cover
                     category = await self.category_repo.update(category)
                     await self.storage_repo.delete_object(cover_name)
 

@@ -13,4 +13,4 @@ def storage_repo_depend(
 ) -> IStorageRepo:
     
     if isinstance(client, Minio):        
-        return MinioRepo(client, "categories")
+        return MinioRepo(client, "category")

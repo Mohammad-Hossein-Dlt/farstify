@@ -5,7 +5,7 @@ from . import (
     update,
     delete_by_id,
     reorder,
-    get_by_criteria,
+    get_by_document_id,
     delete_by_document_id,
 )
 
@@ -16,6 +16,6 @@ __all__ = [
     "update",
     "delete_by_id",
     "reorder",
-    "get_by_criteria",
+    "get_by_document_id",
     "delete_by_document_id",
 ]

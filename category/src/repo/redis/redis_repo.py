@@ -54,7 +54,6 @@ class RedisCacheRepo(ICacheRepo):
     ) -> dict | str | None:
         
         try:
-
             cached = self.redis_client.execute_command(
                 "JSON.GET",
                 cache_id,
@@ -73,7 +72,6 @@ class RedisCacheRepo(ICacheRepo):
     ) -> bool | None:
         
         try:
-
             self.redis_client.unlink(cache_id)
             return True
         except:

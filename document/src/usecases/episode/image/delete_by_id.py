@@ -29,7 +29,7 @@ class DeleteImage:
             image: EpisodeImageModel = await self.episode_image_repo.get_by_id(image_id)
             episode: EpisodeModel = await self.episode_repo.get_by_id(image.episode_id)
             
-            result = await self.storage_repo.delete_object(f"{episode.id}/" + image.cover)
+            result = await self.storage_repo.delete_object(f"{episode.id}/" + "image/" + image.cover)
             
             status = False
             if result:

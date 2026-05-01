@@ -30,7 +30,7 @@ class DeleteAllImages:
             
             status = True if images else False
             for i in images:
-                result = await self.storage_repo.delete_object(f"{document.id}/" + i.cover)
+                result = await self.storage_repo.delete_object(f"{document.id}/"+ "image/" + i.cover)
                 if result:
                     await self.document_image_repo.delete_by_id(i.id)
                 else:

@@ -4,8 +4,8 @@ from . import (
     get_by_id,
     update,
     delete_by_id,
-    get_by_criteria,
-    delete_all,
+    get_by_document_id,
+    delete_by_document_id,
 )
 
 __all__ = [
@@ -15,6 +15,6 @@ __all__ = [
     "get_by_id",
     "update",
     "delete_by_id",
-    "get_by_criteria",
-    "delete_all",
+    "get_by_document_id",
+    "delete_by_document_id",
 ]

@@ -65,7 +65,7 @@ class CreateDashManifest:
                 
                 result = await self.storage_repo.upload_object(
                     str(mpd_path),
-                    str(object_path.parent) + "/" + mpd_path.name,
+                    str(object_path.parent).replace("\\", "/") + "/" + mpd_path.name,
                 )
                 
             if result:

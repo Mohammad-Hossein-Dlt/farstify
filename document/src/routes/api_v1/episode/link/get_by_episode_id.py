@@ -4,7 +4,7 @@ from src.routes.http_response.responses import ResponseMessage
 from src.models.schemas.filter.sort_direction_filter_input import SortDirectionFilterInput
 from src.repo.interface.episode.Iepisode_link_repo import IEpisodeLinkRepo
 from src.routes.depends.repo_depend import episode_link_repo_depend
-from src.usecases.episode.link.get_by_criteria import GetAllLinks
+from src.usecases.episode.link.get_by_episode_id import GetAllLinks
 from src.infra.exceptions.exceptions import AppBaseException
 
 @router.get(
@@ -14,7 +14,7 @@ from src.infra.exceptions.exceptions import AppBaseException
         **ResponseMessage.HTTP_500_INTERNAL_SERVER_ERROR("Internal server error"),
     }
 )
-async def get_by_criteria(
+async def get_by_episode_id(
     criteria: SortDirectionFilterInput = Query(...),
     episode_link_repo: IEpisodeLinkRepo = Depends(episode_link_repo_depend),
 ):

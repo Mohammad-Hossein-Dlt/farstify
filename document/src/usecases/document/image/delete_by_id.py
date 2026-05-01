@@ -29,7 +29,7 @@ class DeleteImage:
             image: DocumentImageModel = await self.document_image_repo.get_by_id(image_id)
             document: DocumentModel = await self.document_repo.get_by_id(image.document_id)
             
-            result = await self.storage_repo.delete_object(f"{document.id}/" + image.cover)
+            result = await self.storage_repo.delete_object(f"{document.id}/" + "image/" + image.cover)
             
             status = False
             if result:

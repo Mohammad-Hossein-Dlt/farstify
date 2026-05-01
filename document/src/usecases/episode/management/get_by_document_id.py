@@ -18,7 +18,7 @@ class GetAllEpisodes:
     ) -> list[EpisodeModel]:
         
         try:
-            episodes: list[EpisodeModel] = await self.episode_repo.get_all()
+            episodes: list[EpisodeModel] = await self.episode_repo.get_by_document_id(criteria.value)
             if isinstance(episodes, list):
                 if criteria.order == "asc":
                     pass
