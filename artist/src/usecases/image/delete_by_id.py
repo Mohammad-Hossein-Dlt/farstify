@@ -29,7 +29,7 @@ class DeleteImage:
             image: ArtistImageModel = await self.artist_image_repo.get_by_id(image_id)
             artist: ArtistModel = await self.artist_repo.get_by_id(image.artist_id)
             
-            result = await self.storage_repo.delete_object(f"{artist.id}/" + image.cover)
+            result = await self.storage_repo.delete_object(f"{artist.id}/" + "image/" + image.cover)
             
             status = False
             if result:

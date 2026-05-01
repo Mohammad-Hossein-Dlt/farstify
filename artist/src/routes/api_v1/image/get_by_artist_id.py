@@ -8,7 +8,7 @@ from src.repo.interface.Iartist_image_repo import IArtistImageRepo
 from src.routes.depends.repo_depend import artist_image_repo_depend
 from src.repo.interface.Istorage_repo import IStorageRepo
 from src.routes.depends.storage_depend import storage_repo_depend
-from src.usecases.image.get_by_criteria import GetAllImages
+from src.usecases.image.get_by_artist_id import GetAllImages
 from src.infra.exceptions.exceptions import AppBaseException
 
 @router.get(
@@ -18,7 +18,7 @@ from src.infra.exceptions.exceptions import AppBaseException
         **ResponseMessage.HTTP_500_INTERNAL_SERVER_ERROR("Internal server error"),
     }
 )
-async def get_by_criteria(
+async def get_by_artist_id(
     criteria: SortDirectionFilterInput = Query(...),
     artist_repo: IArtistRepo = Depends(artist_repo_depend),
     artist_image_repo: IArtistImageRepo = Depends(artist_image_repo_depend),

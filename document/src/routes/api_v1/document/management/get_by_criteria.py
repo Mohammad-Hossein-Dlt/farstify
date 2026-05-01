@@ -14,7 +14,7 @@ from src.infra.exceptions.exceptions import AppBaseException
         **ResponseMessage.HTTP_500_INTERNAL_SERVER_ERROR("Internal server error"),
     }
 )
-async def get_all_by_criteria(
+async def get_by_criteria(
     criteria: SortDirectionFilterInput = Query(...),
     document_repo: IDocumentRepo = Depends(document_repo_depend),
 ):
