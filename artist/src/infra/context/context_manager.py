@@ -18,7 +18,7 @@ class AppContextManager:
     @classmethod
     async def lazy_init_context(cls):
         
-        print("Starting up...")
+        print("     Starting up...     ")
         
         AppContext.storage_client = await init_storage_client(settings.MINIO)
         AppContext.db_client = await init_database_client(settings.MONGODB)
@@ -31,7 +31,7 @@ class AppContextManager:
     @classmethod
     async def terminate_context(cls):
         
-        print("Shutting down...")
+        print(     "Shutting down...     ")
         
         await terminate_broker_client(AppContext.broker_client)
         await terminate_storage_client(AppContext.storage_client)

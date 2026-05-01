@@ -19,6 +19,7 @@ dependencies = [
     "loguru>=0.7.3",
     "minio>=7.2.20",
     "motor>=3.7.1",
+    "mutagen>=1.47.0",
     "pipdeptree>=2.35.2",
     "prometheus-client>=0.25.0",
     "psycopg>=3.3.3",

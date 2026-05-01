@@ -8,8 +8,10 @@ from src.domain.schemas.episode.episode_model import EpisodeModel
 from src.domain.schemas.document.document_model import DocumentModel
 from src.domain.enums import Format
 from src.infra.exceptions.exceptions import AppBaseException, OperationFailureException
+import mutagen
 import tempfile
 from pathlib import Path
+from io import BytesIO
 
 class CreateEpisode:
     
@@ -47,7 +49,13 @@ class CreateEpisode:
                 new_object_name = f"{base_path}/{cover_name}"
                 delete_prev = await self.storage_repo.delete_objects(base_path)
                 if delete_prev:
+                    in_memory_file = BytesIO(file.read())
+                    audio_info = mutagen.File(in_memory_file)
+                    if audio_info:
+                        episode.duration = float(audio_info.info.length)
+                        episode: EpisodeModel = await self.episode_repo.update(episode)
                     try:
+                        file.seek(0)
                         result = await self.storage_repo.upload_object(
                             file,
                             new_object_name,
