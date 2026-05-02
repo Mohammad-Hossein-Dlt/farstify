@@ -2,7 +2,7 @@ from ._router import router
 from fastapi import Query, Depends, HTTPException
 from src.routes.http_response.responses import ResponseMessage
 from src.models.schemas.user.update_link_input import UpdateLinkInput
-from src.repo.interface.Iuser_link_repo import IUserLinkRepo
+from src.repo.interface.user.Iuser_link_repo import IUserLinkRepo
 from src.routes.depends.repo_depend import user_link_repo_depend
 from src.usecases.link.update import UpdateLink
 from src.infra.exceptions.exceptions import AppBaseException

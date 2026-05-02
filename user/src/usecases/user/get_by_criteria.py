@@ -1,5 +1,5 @@
-from src.repo.interface.Iuser_repo import IUserRepo
-from user.src.models.schemas.filter.base_filter_criteria import BaseFilterCriteria
+from src.repo.interface.user.Iuser_repo import IUserRepo
+from src.models.schemas.filter.base_filter_criteria import BaseFilterCriteria
 from src.domain.schemas.user.user_model import UserModel
 from src.infra.exceptions.exceptions import AppBaseException, OperationFailureException
 

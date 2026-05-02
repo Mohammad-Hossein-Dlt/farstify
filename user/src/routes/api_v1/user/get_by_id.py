@@ -1,7 +1,7 @@
 from ._router import router
 from fastapi import Depends, Query, HTTPException
 from src.routes.http_response.responses import ResponseMessage
-from src.repo.interface.Iuser_repo import IUserRepo
+from src.repo.interface.user.Iuser_repo import IUserRepo
 from src.routes.depends.repo_depend import user_repo_depend
 from src.usecases.user.get_by_id import GetUser
 from src.infra.exceptions.exceptions import AppBaseException

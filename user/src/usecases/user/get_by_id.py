@@ -1,4 +1,4 @@
-from src.repo.interface.Iuser_repo import IUserRepo
+from src.repo.interface.user.Iuser_repo import IUserRepo
 from src.domain.schemas.user.user_model import UserModel
 from src.infra.exceptions.exceptions import AppBaseException, OperationFailureException
 

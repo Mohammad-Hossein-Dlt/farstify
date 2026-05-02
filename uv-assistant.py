@@ -289,12 +289,11 @@ def remove_uv_lock(
 def main() -> None:
     
     cwd = Path.cwd()
+    paths_list = list(discover_dirs(cwd))
 
     ensure_uv_available()
     ensure_venv_available(cwd)
     check_requirements(cwd)
-
-    paths_list = list(discover_dirs(cwd))
 
     if not paths_list:
         return

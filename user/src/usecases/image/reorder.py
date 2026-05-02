@@ -1,5 +1,5 @@
-from src.repo.interface.Iuser_repo import IUserRepo
-from src.repo.interface.Iuser_image_repo import IUserImageRepo
+from src.repo.interface.user.Iuser_repo import IUserRepo
+from src.repo.interface.user.Iuser_image_repo import IUserImageRepo
 from src.domain.schemas.user.user_image import UserImageModel
 from src.infra.exceptions.exceptions import AppBaseException, OperationFailureException
 

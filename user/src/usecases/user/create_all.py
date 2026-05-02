@@ -1,4 +1,4 @@
-from src.repo.interface.Iuser_repo import IUserRepo
+from src.repo.interface.user.Iuser_repo import IUserRepo
 from src.models.schemas.user.create_user_input import CreateUserInput
 from src.domain.schemas.user.user_model import UserModel
 from src.models.schemas.operation.operation_output import OperationOutput

@@ -2,9 +2,9 @@ from ._router import router
 from fastapi import UploadFile, Query, Depends, HTTPException
 from src.routes.http_response.responses import ResponseMessage
 from src.models.schemas.user.create_image_input import CreateImageInput
-from src.repo.interface.Iuser_repo import IUserRepo
+from src.repo.interface.user.Iuser_repo import IUserRepo
 from src.routes.depends.repo_depend import user_repo_depend
-from src.repo.interface.Iuser_image_repo import IUserImageRepo
+from src.repo.interface.user.Iuser_image_repo import IUserImageRepo
 from src.routes.depends.repo_depend import user_image_repo_depend
 from src.repo.interface.Istorage_repo import IStorageRepo
 from src.routes.depends.storage_depend import storage_repo_depend

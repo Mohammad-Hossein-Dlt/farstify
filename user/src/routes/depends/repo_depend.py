@@ -3,14 +3,17 @@ from sqlalchemy.orm import Session
 from pymongo.asynchronous.mongo_client import AsyncMongoClient
 from .db_depend import db_client_depend
 
-from src.repo.interface.Iuser_repo import IUserRepo
-from src.repo.mongodb.user_repo import UserMongodbRepo
+from src.repo.interface.user.Iuser_repo import IUserRepo
+from src.repo.mongodb.user.user_repo import UserMongodbRepo
    
-from src.repo.interface.Iuser_image_repo import IUserImageRepo
-from src.repo.mongodb.user_image_repo import UserImageMongodbRepo
+from src.repo.interface.user.Iuser_image_repo import IUserImageRepo
+from src.repo.mongodb.user.user_image_repo import UserImageMongodbRepo
    
-from src.repo.interface.Iuser_link_repo import IUserLinkRepo
-from src.repo.mongodb.user_link_repo import UserLinkMongodbRepo
+from src.repo.interface.user.Iuser_link_repo import IUserLinkRepo
+from src.repo.mongodb.user.user_link_repo import UserLinkMongodbRepo
+
+from src.repo.interface.follow.Ifollow_repo import IFollowRepo
+from src.repo.mongodb.follow.followed_repo import FollowMongodbRepo
    
 def user_repo_depend(
     db_client: AsyncMongoClient | Session = Depends(db_client_depend)
@@ -32,3 +35,10 @@ def user_link_repo_depend(
 
     if isinstance(db_client, AsyncMongoClient):
         return UserLinkMongodbRepo()
+
+def follow_repo_depend(
+    db_client: AsyncMongoClient | Session = Depends(db_client_depend)
+) -> IFollowRepo:
+
+    if isinstance(db_client, AsyncMongoClient):
+        return FollowMongodbRepo()

@@ -1,7 +1,7 @@
 from ._router import router
 from fastapi import Depends, Query, HTTPException
 from src.routes.http_response.responses import ResponseMessage
-from src.repo.interface.Iuser_link_repo import IUserLinkRepo
+from src.repo.interface.user.Iuser_link_repo import IUserLinkRepo
 from src.routes.depends.repo_depend import user_link_repo_depend
 from src.usecases.link.delete_by_id import DeleteLink
 from src.infra.exceptions.exceptions import AppBaseException

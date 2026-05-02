@@ -1,8 +1,8 @@
 from ._router import router
 from fastapi import Depends, Query, HTTPException
 from src.routes.http_response.responses import ResponseMessage
-from user.src.models.schemas.filter.base_filter_criteria import BaseFilterCriteria
-from src.repo.interface.Iuser_link_repo import IUserLinkRepo
+from src.models.schemas.filter.base_filter_criteria import BaseFilterCriteria
+from src.repo.interface.user.Iuser_link_repo import IUserLinkRepo
 from src.routes.depends.repo_depend import user_link_repo_depend
 from src.usecases.link.get_by_user_id import GetAllLinks
 from src.infra.exceptions.exceptions import AppBaseException

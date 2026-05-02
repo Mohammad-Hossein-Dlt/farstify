@@ -1,4 +1,4 @@
-from src.repo.interface.Iuser_link_repo import IUserLinkRepo
+from src.repo.interface.user.Iuser_link_repo import IUserLinkRepo
 from src.models.schemas.operation.operation_output import OperationOutput
 from src.infra.exceptions.exceptions import AppBaseException, OperationFailureException
 

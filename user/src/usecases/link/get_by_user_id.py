@@ -1,5 +1,5 @@
-from src.repo.interface.Iuser_link_repo import IUserLinkRepo
-from user.src.models.schemas.filter.base_filter_criteria import BaseFilterCriteria
+from src.repo.interface.user.Iuser_link_repo import IUserLinkRepo
+from src.models.schemas.filter.base_filter_criteria import BaseFilterCriteria
 from src.domain.schemas.user.user_link import UserLinkModel
 from src.infra.exceptions.exceptions import AppBaseException, OperationFailureException
 

@@ -1,9 +1,9 @@
 from ._router import router
 from fastapi import Depends, HTTPException
 from src.routes.http_response.responses import ResponseMessage
-from src.repo.interface.Iuser_repo import IUserRepo
+from src.repo.interface.user.Iuser_repo import IUserRepo
 from src.routes.depends.repo_depend import user_repo_depend
-from src.repo.interface.Iuser_image_repo import IUserImageRepo
+from src.repo.interface.user.Iuser_image_repo import IUserImageRepo
 from src.routes.depends.repo_depend import user_image_repo_depend
 from src.usecases.image.reorder import ReorderImages
 from src.infra.exceptions.exceptions import AppBaseException

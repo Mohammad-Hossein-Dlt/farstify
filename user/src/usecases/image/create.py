@@ -1,5 +1,5 @@
-from src.repo.interface.Iuser_repo import IUserRepo
-from src.repo.interface.Iuser_image_repo import IUserImageRepo
+from src.repo.interface.user.Iuser_repo import IUserRepo
+from src.repo.interface.user.Iuser_image_repo import IUserImageRepo
 from src.repo.interface.Istorage_repo import IStorageRepo
 from src.models.schemas.user.create_image_input import CreateImageInput
 from src.domain.schemas.user.user_model import UserModel

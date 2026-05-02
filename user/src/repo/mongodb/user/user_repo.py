@@ -1,6 +1,6 @@
-from src.repo.interface.Iuser_repo import IUserRepo
+from src.repo.interface.user.Iuser_repo import IUserRepo
 from src.domain.schemas.user.user_model import UserModel
-from src.infra.database.mongodb.collections.user_collection import UserCollection
+from src.infra.database.mongodb.collections.user.user_collection import UserCollection
 from src.models.schemas.filter.base_filter_criteria import BaseFilterCriteria
 from src.infra.exceptions.exceptions import EntityNotFoundError, DuplicateEntityError
 from src.infra.utils.convert_id import convert_object_id

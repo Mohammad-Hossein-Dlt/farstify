@@ -1,4 +1,4 @@
-from src.repo.interface.Iuser_repo import IUserRepo
+from src.repo.interface.user.Iuser_repo import IUserRepo
 from src.repo.interface.Istorage_repo import IStorageRepo
 from src.models.schemas.user.update_user_input import UpdateUserInput
 from src.domain.schemas.user.user_model import UserModel

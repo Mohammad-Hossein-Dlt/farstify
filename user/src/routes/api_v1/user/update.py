@@ -2,7 +2,7 @@ from ._router import router
 from fastapi import Query, Depends, HTTPException
 from src.routes.http_response.responses import ResponseMessage
 from src.models.schemas.user.update_user_input import UpdateUserInput
-from src.repo.interface.Iuser_repo import IUserRepo
+from src.repo.interface.user.Iuser_repo import IUserRepo
 from src.routes.depends.repo_depend import user_repo_depend
 from src.repo.interface.Istorage_repo import IStorageRepo
 from src.routes.depends.storage_depend import storage_repo_depend

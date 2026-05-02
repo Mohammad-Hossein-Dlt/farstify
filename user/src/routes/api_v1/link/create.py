@@ -2,9 +2,9 @@ from ._router import router
 from fastapi import Query, Depends, HTTPException
 from src.routes.http_response.responses import ResponseMessage
 from src.models.schemas.user.create_link_input import CreateLinkInput
-from src.repo.interface.Iuser_repo import IUserRepo
+from src.repo.interface.user.Iuser_repo import IUserRepo
 from src.routes.depends.repo_depend import user_repo_depend
-from src.repo.interface.Iuser_link_repo import IUserLinkRepo
+from src.repo.interface.user.Iuser_link_repo import IUserLinkRepo
 from src.routes.depends.repo_depend import user_link_repo_depend
 from src.usecases.link.create import CreateLink
 from src.infra.exceptions.exceptions import AppBaseException

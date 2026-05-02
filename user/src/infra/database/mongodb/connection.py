@@ -1,10 +1,11 @@
 from pymongo.asynchronous.database import AsyncDatabase
 from pymongo.asynchronous.mongo_client import AsyncMongoClient
-from .collections.user_collection import UserCollection
-from .collections.user_image_collection import UserImageCollection
-from .collections.user_link_collection import UserLinkCollection
 from beanie import init_beanie
 
+from .collections.user.user_collection import UserCollection
+from .collections.user.user_image_collection import UserImageCollection
+from .collections.user.user_link_collection import UserLinkCollection
+from .collections.follow.follows import FollowsCollection
 
 async def init_mongodb_client(
     host: str,
@@ -32,6 +33,7 @@ async def init_mongodb_client(
             UserCollection,
             UserImageCollection,
             UserLinkCollection,
+            FollowsCollection,
         ],
     )
     

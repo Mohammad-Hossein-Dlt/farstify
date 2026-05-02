@@ -5,6 +5,11 @@ class Environment(str, Enum):
     test = "test"
     prod = "prod"
 
+class FollowTargetType(str, Enum):
+    ARTIST = "artist"
+    DOCUMENT = "document"
+    EPISODE = "episode"
+
 class Format(str, Enum):
     dash = "dash"
     hls = "hls"
