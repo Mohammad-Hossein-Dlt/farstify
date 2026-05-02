@@ -42,7 +42,7 @@ class CategoryMongodbRepo(ICategoryRepo):
     async def get_by_id(
         self,
         category_id: str,
-    ) ->  CategoryModel:
+    ) -> CategoryModel:
         
         try:
                                     
@@ -59,7 +59,7 @@ class CategoryMongodbRepo(ICategoryRepo):
     async def update(
         self,
         category: CategoryModel,
-    ) ->  CategoryModel:
+    ) -> CategoryModel:
         
         try:               
             
@@ -139,7 +139,7 @@ class CategoryMongodbRepo(ICategoryRepo):
     async def get_ancestors(
         self,
         parent_id: str,
-    ) ->  list[CategoryModel]:
+    ) -> list[CategoryModel]:
         
         async def _get_ancestors(
             p_id: str | None = None,

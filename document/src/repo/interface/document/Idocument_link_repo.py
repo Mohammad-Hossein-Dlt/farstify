@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from src.domain.schemas.document.document_link import DocumentLinkModel
+from src.models.schemas.filter.base_filter_criteria import BaseFilterCriteria
 
 class IDocumentLinkRepo(ABC):
         
@@ -34,6 +35,7 @@ class IDocumentLinkRepo(ABC):
     @abstractmethod
     async def get_by_document_id(
         document_id: str,
+        criteria: BaseFilterCriteria,
     ) -> list[DocumentLinkModel]:
     
         raise NotImplementedError

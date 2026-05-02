@@ -1,6 +1,7 @@
 from src.repo.interface.document.Idocument_repo import IDocumentRepo
 from src.domain.schemas.document.document_model import DocumentModel
 from src.infra.database.mongodb.collections.document.document_collection import DocumentCollection
+from src.models.schemas.filter.base_filter_criteria import BaseFilterCriteria
 from src.infra.exceptions.exceptions import EntityNotFoundError
 from src.infra.utils.convert_id import convert_object_id
 
@@ -75,13 +76,18 @@ class DocumentMongodbRepo(IDocumentRepo):
     async def get_by_artist_id(
         self,
         artist_id: str,
+        criteria: BaseFilterCriteria,
     ) -> list[DocumentModel]:
         
         try:
             artist_id = convert_object_id(artist_id)
             documents_list = await DocumentCollection.find_many(
                 DocumentCollection.artist_id == artist_id,
-            ).to_list()                       
+            ).skip(
+                criteria.page * criteria.limit
+            ).limit(
+                criteria.limit
+            ).to_list()                    
             return [ DocumentModel.model_validate(document, from_attributes=True) for document in documents_list ]
         except:
             raise EntityNotFoundError(status_code=404, message="document not found")
@@ -102,9 +108,14 @@ class DocumentMongodbRepo(IDocumentRepo):
     
     async def get_all(
         self,
+        criteria: BaseFilterCriteria,
     ) -> list[DocumentModel]:    
         try:
-            documents_list = await DocumentCollection.find_all().to_list()            
+            documents_list = await DocumentCollection.find_all().skip(
+                criteria.page * criteria.limit
+            ).limit(
+                criteria.limit
+            ).to_list()             
             return [ DocumentModel.model_validate(document, from_attributes=True) for document in documents_list ]
         except:
             raise EntityNotFoundError(status_code=404, message="document not found")

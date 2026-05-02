@@ -1,5 +1,5 @@
 from src.repo.interface.episode.Iepisode_link_repo import IEpisodeLinkRepo
-from src.models.schemas.filter.sort_direction_filter_input import SortDirectionFilterInput
+from document.src.models.schemas.filter.base_filter_criteria import BaseFilterCriteria
 from src.domain.schemas.episode.episode_link import EpisodeLinkModel
 from src.infra.exceptions.exceptions import AppBaseException, OperationFailureException
 
@@ -14,11 +14,12 @@ class GetAllLinks:
     
     async def execute(
         self,
-        criteria: SortDirectionFilterInput,
+        episode_id: str,
+        criteria: BaseFilterCriteria,
     ) -> list[EpisodeLinkModel]:
         
         try:
-            links: list[SortDirectionFilterInput] = await self.episode_link_repo.get_by_episode_id(criteria.value)
+            links: list[BaseFilterCriteria] = await self.episode_link_repo.get_by_episode_id(episode_id, criteria)
             if isinstance(links, list):
                 if criteria.order == "asc":
                     links.sort(key=lambda x: (x.order is None, x.order))

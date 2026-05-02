@@ -1,7 +1,7 @@
 from ._router import router
 from fastapi import Depends, Query, HTTPException
 from src.routes.http_response.responses import ResponseMessage
-from src.models.schemas.filter.sort_direction_filter_input import SortDirectionFilterInput
+from src.models.schemas.filter.base_filter_criteria import BaseFilterCriteria
 from src.repo.interface.Iartist_repo import IArtistRepo
 from src.routes.depends.repo_depend import artist_repo_depend
 from src.usecases.artist.get_by_criteria import GetAllArtists
@@ -15,7 +15,7 @@ from src.infra.exceptions.exceptions import AppBaseException
     }
 )
 async def get_by_criteria(
-    criteria: SortDirectionFilterInput = Query(...),
+    criteria: BaseFilterCriteria = Depends(),
     artist_repo: IArtistRepo = Depends(artist_repo_depend),
 ):
     try:

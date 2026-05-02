@@ -1,5 +1,5 @@
 from src.repo.interface.Iartist_repo import IArtistRepo
-from src.models.schemas.filter.sort_direction_filter_input import SortDirectionFilterInput
+from src.models.schemas.filter.base_filter_criteria import BaseFilterCriteria
 from src.domain.schemas.artist.artist_model import ArtistModel
 from src.infra.exceptions.exceptions import AppBaseException, OperationFailureException
 
@@ -14,11 +14,11 @@ class GetAllArtists:
     
     async def execute(
         self,
-        criteria: SortDirectionFilterInput,
+        criteria: BaseFilterCriteria,
     ) -> list[ArtistModel]:
         
         try:
-            artists: list[ArtistModel] = await self.artist_repo.get_all()
+            artists: list[ArtistModel] = await self.artist_repo.get_all(criteria)
             if isinstance(artists, list):
                 if criteria.order == "asc":
                     pass

@@ -1,6 +1,7 @@
 from src.repo.interface.episode.Iepisode_repo import IEpisodeRepo
 from src.domain.schemas.episode.episode_model import EpisodeModel
 from src.infra.database.mongodb.collections.episode.episode_collection import EpisodeCollection
+from src.models.schemas.filter.base_filter_criteria import BaseFilterCriteria
 from src.infra.exceptions.exceptions import EntityNotFoundError
 from src.infra.utils.convert_id import convert_object_id
 
@@ -19,7 +20,7 @@ class EpisodeMongodbRepo(IEpisodeRepo):
     async def get_by_id(
         self,
         episode_id: str,
-    ) ->  EpisodeModel:
+    ) -> EpisodeModel:
         
         try:
                                     
@@ -36,7 +37,7 @@ class EpisodeMongodbRepo(IEpisodeRepo):
     async def update(
         self,
         episode: EpisodeModel,
-    ) ->  EpisodeModel:
+    ) -> EpisodeModel:
         
         try:               
             
@@ -75,13 +76,18 @@ class EpisodeMongodbRepo(IEpisodeRepo):
     async def get_by_document_id(
         self,
         document_id: str,
-    ) ->  list[EpisodeModel]:
+        criteria: BaseFilterCriteria,
+    ) -> list[EpisodeModel]:
         
         try:
             document_id = convert_object_id(document_id)
             episodes_list = await EpisodeCollection.find_many(
                 EpisodeCollection.document_id == document_id,
-            ).to_list()                       
+            ).skip(
+                criteria.page * criteria.limit
+            ).limit(
+                criteria.limit
+            ).to_list()                  
             return [ EpisodeModel.model_validate(episode, from_attributes=True) for episode in episodes_list ]
         except:
             raise EntityNotFoundError(status_code=404, message="episode not found")
@@ -89,7 +95,7 @@ class EpisodeMongodbRepo(IEpisodeRepo):
     async def delete_by_document_id(
         self,
         document_id: str,
-    ) ->  bool:
+    ) -> bool:
         
         try:
             document_id = convert_object_id(document_id)
@@ -102,9 +108,14 @@ class EpisodeMongodbRepo(IEpisodeRepo):
     
     async def get_all(
         self,
+        criteria: BaseFilterCriteria,
     ) -> list[EpisodeModel]:    
         try:
-            episodes_list = await EpisodeCollection.find_all().to_list()            
+            episodes_list = await EpisodeCollection.find_all().skip(
+                criteria.page * criteria.limit
+            ).limit(
+                criteria.limit
+            ).to_list()              
             return [ EpisodeModel.model_validate(episode, from_attributes=True) for episode in episodes_list ]
         except:
             raise EntityNotFoundError(status_code=404, message="episode not found")

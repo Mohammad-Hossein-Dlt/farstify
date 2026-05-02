@@ -1,7 +1,7 @@
 from src.repo.interface.document.Idocument_repo import IDocumentRepo
 from src.repo.interface.document.Idocument_image_repo import IDocumentImageRepo
 from src.repo.interface.Istorage_repo import IStorageRepo
-from src.models.schemas.filter.sort_direction_filter_input import SortDirectionFilterInput
+from document.src.models.schemas.filter.base_filter_criteria import BaseFilterCriteria
 from src.domain.schemas.document.document_image import DocumentImageModel
 from src.infra.exceptions.exceptions import AppBaseException, OperationFailureException
 
@@ -20,11 +20,12 @@ class GetAllImages:
     
     async def execute(
         self,
-        criteria: SortDirectionFilterInput,
+        document_id: str,
+        criteria: BaseFilterCriteria,
     ) -> list[DocumentImageModel]:
         
         try:
-            images: list[DocumentImageModel] = await self.document_image_repo.get_by_document_id(criteria.value)
+            images: list[DocumentImageModel] = await self.document_image_repo.get_by_document_id(document_id, criteria)
             if isinstance(images, list):
                 if criteria.order == "asc":
                     images.sort(key=lambda x: (x.order is None, x.order))

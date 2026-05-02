@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from src.domain.schemas.episode.episode_model import EpisodeModel
+from src.models.schemas.filter.base_filter_criteria import BaseFilterCriteria
 
 class IEpisodeRepo(ABC):
         
@@ -34,6 +35,7 @@ class IEpisodeRepo(ABC):
     @abstractmethod
     async def get_by_document_id(
         document_id: str,
+        criteria: BaseFilterCriteria,
     ) -> list[EpisodeModel]:
     
         raise NotImplementedError
@@ -46,7 +48,9 @@ class IEpisodeRepo(ABC):
         raise NotImplementedError
     
     @abstractmethod
-    async def get_all() -> list[EpisodeModel]:
+    async def get_all(
+        criteria: BaseFilterCriteria,
+    ) -> list[EpisodeModel]:
     
         raise NotImplementedError
     

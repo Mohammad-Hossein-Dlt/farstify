@@ -1,6 +1,7 @@
 from src.repo.interface.document.Idocument_link_repo import IDocumentLinkRepo
 from src.domain.schemas.document.document_link import DocumentLinkModel
 from src.infra.database.mongodb.collections.document.document_link_collection import DocumentLinkCollection
+from src.models.schemas.filter.base_filter_criteria import BaseFilterCriteria
 from src.infra.exceptions.exceptions import EntityNotFoundError
 from src.infra.utils.convert_id import convert_object_id
 
@@ -74,12 +75,17 @@ class DocumentLinkMongodbRepo(IDocumentLinkRepo):
     async def get_by_document_id(
         self,
         document_id: str,
+        criteria: BaseFilterCriteria,
     ) -> list[DocumentLinkModel]:
         
         try:
             document_id = convert_object_id(document_id)
             links_list = await DocumentLinkCollection.find_many(
                 DocumentLinkCollection.document_id == document_id,
+            ).skip(
+                criteria.page * criteria.limit
+            ).limit(
+                criteria.limit
             ).to_list()
             return [ DocumentLinkModel.model_validate(link, from_attributes=True) for link in links_list ]
         except EntityNotFoundError:

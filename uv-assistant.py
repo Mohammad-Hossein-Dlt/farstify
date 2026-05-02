@@ -200,6 +200,7 @@ def get_top_packages(dir: Path):
         cwd=dir,
         return_result=True,
     )
+    
     data: list[dict] = json.loads(result)
     
     deps = set()

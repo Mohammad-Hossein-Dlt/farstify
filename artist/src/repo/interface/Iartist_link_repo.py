@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from src.domain.schemas.artist.artist_link import ArtistLinkModel
+from src.models.schemas.filter.base_filter_criteria import BaseFilterCriteria
 
 class IArtistLinkRepo(ABC):
         
@@ -13,14 +14,14 @@ class IArtistLinkRepo(ABC):
     @abstractmethod
     async def get_by_id(
         link_id: str,
-    ) ->  ArtistLinkModel:
+    ) -> ArtistLinkModel:
     
         raise NotImplementedError
     
     @abstractmethod
     async def update(
         link: ArtistLinkModel,
-    ) ->  ArtistLinkModel:
+    ) -> ArtistLinkModel:
     
         raise NotImplementedError
     
@@ -34,7 +35,8 @@ class IArtistLinkRepo(ABC):
     @abstractmethod
     async def get_by_artist_id(
         artist_id: str,
-    ) ->  list[ArtistLinkModel]:
+        criteria: BaseFilterCriteria,
+    ) -> list[ArtistLinkModel]:
     
         raise NotImplementedError
     

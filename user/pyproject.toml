@@ -1,0 +1,43 @@
+[project]
+name = "user-service"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "aio-pika>=9.6.2",
+    "aiohttp>=3.13.5",
+    "async-timeout>=5.0.1",
+    "beanie>=2.1.0",
+    "email-validator>=2.3.0",
+    "fastapi>=0.136.1",
+    "fastapi-cli>=0.0.24",
+    "fastapi-cloud-cli>=0.17.1",
+    "fastapi-swagger>=0.4.49",
+    "faststream>=0.6.7",
+    "httptools>=0.7.1",
+    "itsdangerous>=2.2.0",
+    "jinja2>=3.1.6",
+    "loguru>=0.7.3",
+    "minio>=7.2.20",
+    "motor>=3.7.1",
+    "mutagen>=1.47.0",
+    "pipdeptree>=2.35.2",
+    "prometheus-client>=0.25.0",
+    "psycopg>=3.3.4",
+    "psycopg-binary>=3.3.4",
+    "pydantic>=2.13.3",
+    "pydantic-settings>=2.14.0",
+    "pyjwt>=2.12.1",
+    "pymongo>=4.17.0",
+    "python-multipart>=0.0.27",
+    "pyyaml>=6.0.3",
+    "redis>=7.4.0",
+    "sqlalchemy>=2.0.49",
+    "watchfiles>=1.1.1",
+    "websockets>=16.0",
+]
+
+[[tool.uv.index]]
+url = "https://repo.hmirror.ir/python/simple"
+
+[[tool.uv.index]]
+url = "https://mirror-pypi.runflare.com/simple"

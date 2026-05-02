@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from src.domain.schemas.episode.episode_image import EpisodeImageModel
+from src.models.schemas.filter.base_filter_criteria import BaseFilterCriteria
 
 class IEpisodeImageRepo(ABC):
         
@@ -34,6 +35,7 @@ class IEpisodeImageRepo(ABC):
     @abstractmethod
     async def get_by_episode_id(
         episode_id: str,
+        criteria: BaseFilterCriteria,
     ) -> list[EpisodeImageModel]:
 
         raise NotImplementedError

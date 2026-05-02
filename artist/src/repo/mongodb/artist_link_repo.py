@@ -1,6 +1,7 @@
 from src.repo.interface.Iartist_link_repo import IArtistLinkRepo
 from src.domain.schemas.artist.artist_link import ArtistLinkModel
 from src.infra.database.mongodb.collections.artist_link_collection import ArtistLinkCollection
+from src.models.schemas.filter.base_filter_criteria import BaseFilterCriteria
 from src.infra.exceptions.exceptions import EntityNotFoundError
 from src.infra.utils.convert_id import convert_object_id
 
@@ -19,7 +20,7 @@ class ArtistLinkMongodbRepo(IArtistLinkRepo):
     async def get_by_id(
         self,
         link_id: str,
-    ) ->  ArtistLinkModel:
+    ) -> ArtistLinkModel:
         
         try:
                                     
@@ -36,7 +37,7 @@ class ArtistLinkMongodbRepo(IArtistLinkRepo):
     async def update(
         self,
         link: ArtistLinkModel,
-    ) ->  ArtistLinkModel:
+    ) -> ArtistLinkModel:
         
         try:               
             
@@ -74,12 +75,17 @@ class ArtistLinkMongodbRepo(IArtistLinkRepo):
     async def get_by_artist_id(
         self,
         artist_id: str,
-    ) ->  list[ArtistLinkModel]:
+        criteria: BaseFilterCriteria,
+    ) -> list[ArtistLinkModel]:
         
         try:
             artist_id = convert_object_id(artist_id)
             links_list = await ArtistLinkCollection.find_many(
                 ArtistLinkCollection.artist_id == artist_id,
+            ).skip(
+                criteria.page * criteria.limit
+            ).limit(
+                criteria.limit
             ).to_list()
             return [ ArtistLinkModel.model_validate(link, from_attributes=True) for link in links_list ]
         except EntityNotFoundError:

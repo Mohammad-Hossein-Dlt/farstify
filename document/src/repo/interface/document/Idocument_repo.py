@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from src.domain.schemas.document.document_model import DocumentModel
+from src.models.schemas.filter.base_filter_criteria import BaseFilterCriteria
 
 class IDocumentRepo(ABC):
         
@@ -34,6 +35,7 @@ class IDocumentRepo(ABC):
     @abstractmethod
     async def get_by_artist_id(
         artist_id: str,
+        criteria: BaseFilterCriteria,
     ) -> list[DocumentModel]:
     
         raise NotImplementedError
@@ -46,7 +48,9 @@ class IDocumentRepo(ABC):
         raise NotImplementedError
     
     @abstractmethod
-    async def get_all() -> list[DocumentModel]:
+    async def get_all(
+        criteria: BaseFilterCriteria,
+    ) -> list[DocumentModel]:
     
         raise NotImplementedError
     

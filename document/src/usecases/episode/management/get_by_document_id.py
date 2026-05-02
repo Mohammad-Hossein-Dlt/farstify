@@ -1,5 +1,5 @@
 from src.repo.interface.episode.Iepisode_repo import IEpisodeRepo
-from src.models.schemas.filter.sort_direction_filter_input import SortDirectionFilterInput
+from document.src.models.schemas.filter.base_filter_criteria import BaseFilterCriteria
 from src.domain.schemas.episode.episode_model import EpisodeModel
 from src.infra.exceptions.exceptions import AppBaseException, OperationFailureException
 
@@ -14,11 +14,12 @@ class GetAllEpisodes:
     
     async def execute(
         self,
-        criteria: SortDirectionFilterInput,
+        document_id: str,
+        criteria: BaseFilterCriteria,
     ) -> list[EpisodeModel]:
         
         try:
-            episodes: list[EpisodeModel] = await self.episode_repo.get_by_document_id(criteria.value)
+            episodes: list[EpisodeModel] = await self.episode_repo.get_by_document_id(document_id, criteria)
             if isinstance(episodes, list):
                 if criteria.order == "asc":
                     pass

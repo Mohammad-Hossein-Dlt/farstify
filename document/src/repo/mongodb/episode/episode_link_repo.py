@@ -1,6 +1,7 @@
 from src.repo.interface.episode.Iepisode_link_repo import IEpisodeLinkRepo
 from src.domain.schemas.episode.episode_link import EpisodeLinkModel
 from src.infra.database.mongodb.collections.episode.episode_link_collection import EpisodeLinkCollection
+from src.models.schemas.filter.base_filter_criteria import BaseFilterCriteria
 from src.infra.exceptions.exceptions import EntityNotFoundError
 from src.infra.utils.convert_id import convert_object_id
 
@@ -74,13 +75,18 @@ class EpisodeLinkMongodbRepo(IEpisodeLinkRepo):
     async def get_by_episode_id(
         self,
         episode_id: str,
+        criteria: BaseFilterCriteria,
     ) -> list[EpisodeLinkModel]:
         
         try:
             episode_id = convert_object_id(episode_id)
             links_list = await EpisodeLinkCollection.find_many(
                 EpisodeLinkCollection.episode_id == episode_id,
-            ).to_list()
+            ).skip(
+                criteria.page * criteria.limit
+            ).limit(
+                criteria.limit
+            ).to_list()   
             return [ EpisodeLinkModel.model_validate(link, from_attributes=True) for link in links_list ]
         except EntityNotFoundError:
             raise EntityNotFoundError(status_code=404, message="There are no episodes")

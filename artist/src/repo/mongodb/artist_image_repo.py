@@ -1,6 +1,7 @@
 from src.repo.interface.Iartist_image_repo import IArtistImageRepo
 from src.domain.schemas.artist.artist_image import ArtistImageModel
 from src.infra.database.mongodb.collections.artist_image_collection import ArtistImageCollection
+from src.models.schemas.filter.base_filter_criteria import BaseFilterCriteria
 from src.infra.exceptions.exceptions import EntityNotFoundError
 from src.infra.utils.convert_id import convert_object_id
 
@@ -19,7 +20,7 @@ class ArtistImageMongodbRepo(IArtistImageRepo):
     async def get_by_id(
         self,
         image_id: str,
-    ) ->  ArtistImageModel:
+    ) -> ArtistImageModel:
         
         try:
                                     
@@ -36,7 +37,7 @@ class ArtistImageMongodbRepo(IArtistImageRepo):
     async def update(
         self,
         image: ArtistImageModel,
-    ) ->  ArtistImageModel:
+    ) -> ArtistImageModel:
         
         try:               
             
@@ -74,12 +75,17 @@ class ArtistImageMongodbRepo(IArtistImageRepo):
     async def get_by_artist_id(
         self,
         artist_id: str,
-    ) ->  list[ArtistImageModel]:
+        criteria: BaseFilterCriteria,
+    ) -> list[ArtistImageModel]:
         
         try:
             artist_id = convert_object_id(artist_id)
             images_list = await ArtistImageCollection.find_many(
                 ArtistImageCollection.artist_id == artist_id,
+            ).skip(
+                criteria.page * criteria.limit
+            ).limit(
+                criteria.limit
             ).to_list()            
             return [ ArtistImageModel.model_validate(image, from_attributes=True) for image in images_list ]
         except EntityNotFoundError:

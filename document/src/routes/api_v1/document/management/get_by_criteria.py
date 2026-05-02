@@ -1,7 +1,7 @@
 from ._router import router
 from fastapi import Depends, Query, HTTPException
 from src.routes.http_response.responses import ResponseMessage
-from src.models.schemas.filter.sort_direction_filter_input import SortDirectionFilterInput
+from document.src.models.schemas.filter.base_filter_criteria import BaseFilterCriteria
 from src.repo.interface.document.Idocument_repo import IDocumentRepo
 from src.routes.depends.repo_depend import document_repo_depend
 from src.usecases.document.management.get_by_criteria import GetAllDocuments
@@ -15,7 +15,7 @@ from src.infra.exceptions.exceptions import AppBaseException
     }
 )
 async def get_by_criteria(
-    criteria: SortDirectionFilterInput = Query(...),
+    criteria: BaseFilterCriteria = Depends(),
     document_repo: IDocumentRepo = Depends(document_repo_depend),
 ):
     try:

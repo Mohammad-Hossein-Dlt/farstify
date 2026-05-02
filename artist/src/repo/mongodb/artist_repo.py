@@ -1,6 +1,7 @@
 from src.repo.interface.Iartist_repo import IArtistRepo
 from src.domain.schemas.artist.artist_model import ArtistModel
 from src.infra.database.mongodb.collections.artist_collection import ArtistCollection
+from src.models.schemas.filter.base_filter_criteria import BaseFilterCriteria
 from src.infra.exceptions.exceptions import EntityNotFoundError, DuplicateEntityError
 from src.infra.utils.convert_id import convert_object_id
 
@@ -36,7 +37,7 @@ class ArtistMongodbRepo(IArtistRepo):
     async def get_by_id(
         self,
         artist_id: str,
-    ) ->  ArtistModel:
+    ) -> ArtistModel:
         
         try:
                                     
@@ -53,7 +54,7 @@ class ArtistMongodbRepo(IArtistRepo):
     async def update(
         self,
         artist: ArtistModel,
-    ) ->  ArtistModel:
+    ) -> ArtistModel:
         
         try:               
             
@@ -91,9 +92,14 @@ class ArtistMongodbRepo(IArtistRepo):
     
     async def get_all(
         self,
+        criteria: BaseFilterCriteria,
     ) -> list[ArtistModel]:    
         try:
-            artists_list = await ArtistCollection.find_all().to_list()            
+            artists_list = await ArtistCollection.find_all().skip(
+                criteria.page * criteria.limit
+            ).limit(
+                criteria.limit
+            ).to_list()            
             return [ ArtistModel.model_validate(artist, from_attributes=True) for artist in artists_list ]
         except:
             raise EntityNotFoundError(status_code=404, message="Artist not found")

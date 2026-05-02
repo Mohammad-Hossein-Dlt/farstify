@@ -1,6 +1,7 @@
 from src.repo.interface.document.Idocument_image_repo import IDocumentImageRepo
 from src.domain.schemas.document.document_image import DocumentImageModel
 from src.infra.database.mongodb.collections.document.document_image_collection import DocumentImageCollection
+from src.models.schemas.filter.base_filter_criteria import BaseFilterCriteria
 from src.infra.exceptions.exceptions import EntityNotFoundError
 from src.infra.utils.convert_id import convert_object_id
 
@@ -74,13 +75,18 @@ class DocumentImageMongodbRepo(IDocumentImageRepo):
     async def get_by_document_id(
         self,
         document_id: str,
+        criteria: BaseFilterCriteria,
     ) -> list[DocumentImageModel]:
         
         try:
             document_id = convert_object_id(document_id)
             images_list = await DocumentImageCollection.find_many(
                 DocumentImageCollection.document_id == document_id,
-            ).to_list()            
+            ).skip(
+                criteria.page * criteria.limit
+            ).limit(
+                criteria.limit
+            ).to_list()         
             return [ DocumentImageModel.model_validate(image, from_attributes=True) for image in images_list ]
         except EntityNotFoundError:
             raise EntityNotFoundError(status_code=404, message="There are no documents")

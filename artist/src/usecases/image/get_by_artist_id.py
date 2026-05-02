@@ -1,7 +1,7 @@
 from src.repo.interface.Iartist_repo import IArtistRepo
 from src.repo.interface.Iartist_image_repo import IArtistImageRepo
 from src.repo.interface.Istorage_repo import IStorageRepo
-from src.models.schemas.filter.sort_direction_filter_input import SortDirectionFilterInput
+from src.models.schemas.filter.base_filter_criteria import BaseFilterCriteria
 from src.domain.schemas.artist.artist_image import ArtistImageModel
 from src.infra.exceptions.exceptions import AppBaseException, OperationFailureException
 
@@ -20,11 +20,12 @@ class GetAllImages:
     
     async def execute(
         self,
-        criteria: SortDirectionFilterInput,
+        artist_id: str,
+        criteria: BaseFilterCriteria,
     ) -> list[ArtistImageModel]:
         
         try:
-            images: list[ArtistImageModel] = await self.artist_image_repo.get_by_artist_id(criteria.value)
+            images: list[ArtistImageModel] = await self.artist_image_repo.get_by_artist_id(artist_id, criteria)
             if isinstance(images, list):
                 if criteria.order == "asc":
                     images.sort(key=lambda x: (x.order is None, x.order))
