@@ -2,7 +2,7 @@ from ._router import router
 from fastapi import Depends, Query, HTTPException
 from src.routes.http_response.responses import ResponseMessage
 from src.models.schemas.filter.base_filter_criteria import BaseFilterCriteria
-from src.repo.interface.follow.Ifollow_repo import IFollowRepo
+from src.repo.interface.follow.Ifollows_repo import IFollowsRepo
 from src.routes.depends.repo_depend import follow_repo_depend
 from src.usecases.follow.get_by_user_id import GetAllFollows
 from src.infra.exceptions.exceptions import AppBaseException
@@ -17,7 +17,7 @@ from src.infra.exceptions.exceptions import AppBaseException
 async def get_by_user_id(
     user_id: str = Query(...),
     criteria: BaseFilterCriteria = Depends(),
-    follow_repo: IFollowRepo = Depends(follow_repo_depend),
+    follow_repo: IFollowsRepo = Depends(follow_repo_depend),
 ):
     try:
         get_all_follows_usecase = GetAllFollows(follow_repo)

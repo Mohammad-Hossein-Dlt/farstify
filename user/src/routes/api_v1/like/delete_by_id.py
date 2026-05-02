@@ -1,9 +1,9 @@
 from ._router import router
 from fastapi import Depends, Query, HTTPException
 from src.routes.http_response.responses import ResponseMessage
-from src.repo.interface.follow.Ifollows_repo import IFollowsRepo
-from src.routes.depends.repo_depend import follow_repo_depend
-from src.usecases.follow.delete_by_id import DeleteFollow
+from src.repo.interface.like.Ilikes_repo import ILikesRepo
+from src.routes.depends.repo_depend import like_repo_depend
+from src.usecases.like.delete_by_id import DeleteLike
 from src.infra.exceptions.exceptions import AppBaseException
 
 @router.delete(
@@ -15,11 +15,11 @@ from src.infra.exceptions.exceptions import AppBaseException
 )
 async def delete_by_id(
     target_id: str = Query(...),
-    follow_repo: IFollowsRepo = Depends(follow_repo_depend),
+    like_repo: ILikesRepo = Depends(like_repo_depend),
 ):
     try:
-        delete_follow_usecase = DeleteFollow(follow_repo)
-        output = await delete_follow_usecase.execute(target_id)
+        delete_like_usecase = DeleteLike(like_repo)
+        output = await delete_like_usecase.execute(target_id)
         return output.model_dump(mode="json")
     except AppBaseException as ex:
         raise HTTPException(status_code=ex.status_code, detail=str(ex))

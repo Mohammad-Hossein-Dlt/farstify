@@ -1,15 +1,15 @@
-from src.repo.interface.follow.Ifollows_repo import IFollowsRepo
+from src.repo.interface.like.Ilikes_repo import ILikesRepo
 from src.models.schemas.operation.operation_output import OperationOutput
 from src.infra.exceptions.exceptions import AppBaseException, OperationFailureException
 
-class DeleteAllFollows:
+class DeleteAllLikes:
     
     def __init__(
         self,
-        follow_repo: IFollowsRepo,
+        like_repo: ILikesRepo,
     ):
         
-        self.follow_repo = follow_repo
+        self.like_repo = like_repo
     
     async def execute(
         self,
@@ -17,8 +17,8 @@ class DeleteAllFollows:
     ) -> OperationOutput:
         
         try:
-            status = await self.follow_repo.delete_by_user_id(user_id)
-            return OperationOutput(id=user_id, request="unfollow", status=status)
+            status = await self.like_repo.delete_by_user_id(user_id)
+            return OperationOutput(id=user_id, request="unlike", status=status)
         except AppBaseException:
             raise
         except:

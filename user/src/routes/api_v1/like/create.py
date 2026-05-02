@@ -1,10 +1,10 @@
 from ._router import router
 from fastapi import Query, Depends, HTTPException
 from src.routes.http_response.responses import ResponseMessage
-from src.models.schemas.follow.follow_input import FollowInput
-from src.repo.interface.follow.Ifollows_repo import IFollowsRepo
-from src.routes.depends.repo_depend import follow_repo_depend
-from src.usecases.follow.create import CreateFollow
+from src.models.schemas.like.like_input import LikeInput
+from src.repo.interface.like.Ilikes_repo import ILikesRepo
+from src.routes.depends.repo_depend import like_repo_depend
+from src.usecases.like.create import CreateLike
 from src.infra.exceptions.exceptions import AppBaseException
 
 @router.post(
@@ -15,12 +15,13 @@ from src.infra.exceptions.exceptions import AppBaseException
     }
 )
 async def create(
-    entity: FollowInput = Query(...),
-    follow_repo: IFollowsRepo = Depends(follow_repo_depend),
+    entity: LikeInput = Query(...),
+    like_repo: ILikesRepo = Depends(like_repo_depend),
 ):
     try:
-        create_follow_usecase = CreateFollow(follow_repo)
-        output = await create_follow_usecase.execute(entity)            
+        create_like_usecase = CreateLike(like_repo)
+        output = await create_like_usecase.execute(entity)            
         return output.model_dump(mode="json")
     except AppBaseException as ex:
+        raise
         raise HTTPException(status_code=ex.status_code, detail=str(ex))

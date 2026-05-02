@@ -1,4 +1,4 @@
-from src.repo.interface.follow.Ifollow_repo import IFollowRepo
+from src.repo.interface.follow.Ifollows_repo import IFollowsRepo
 from src.models.schemas.operation.operation_output import OperationOutput
 from src.infra.exceptions.exceptions import AppBaseException, OperationFailureException
 
@@ -8,7 +8,7 @@ class CreateAllFollow:
     
     def __init__(
         self,
-        follow_repo: IFollowRepo,
+        follow_repo: IFollowsRepo,
     ):
         
         self.follow_repo = follow_repo

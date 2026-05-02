@@ -1,12 +1,12 @@
-from src.repo.interface.follow.Ifollow_repo import IFollowRepo, FollowModel
+from src.repo.interface.follow.Ifollows_repo import IFollowsRepo, FollowModel
 from src.domain.schemas.follow.follow_model import FollowModel
-from src.infra.database.mongodb.collections.follow.follows import FollowsCollection
+from src.infra.database.mongodb.collections.follow.follows_collection import FollowsCollection
 from src.models.schemas.filter.base_filter_criteria import BaseFilterCriteria
 from src.infra.exceptions.exceptions import EntityNotFoundError
 from src.infra.utils.convert_id import convert_object_id
 from beanie.operators import And
 
-class FollowMongodbRepo(IFollowRepo):
+class FollowsMongodbRepo(IFollowsRepo):
                 
     async def create(
         self,
@@ -36,7 +36,7 @@ class FollowMongodbRepo(IFollowRepo):
                         
             return FollowModel.model_validate(follow, from_attributes=True)
         except:
-            raise EntityNotFoundError(status_code=404, message="User not found")
+            raise EntityNotFoundError(status_code=404, message="Follow not found")
         
     async def get_by_id(
         self,
@@ -51,7 +51,7 @@ class FollowMongodbRepo(IFollowRepo):
                         
             return FollowModel.model_validate(follow, from_attributes=True)
         except:
-            raise EntityNotFoundError(status_code=404, message="User not found")
+            raise EntityNotFoundError(status_code=404, message="Follow not found")
 
     async def update(
         self,
@@ -88,7 +88,7 @@ class FollowMongodbRepo(IFollowRepo):
             ).delete()                       
             return bool(result.deleted_count)
         except:
-            raise EntityNotFoundError(status_code=404, message="User not found")
+            raise EntityNotFoundError(status_code=404, message="Follow not found")
         
     async def get_by_user_id(
         self,
@@ -109,7 +109,7 @@ class FollowMongodbRepo(IFollowRepo):
             ).to_list()
             return [ FollowModel.model_validate(follow, from_attributes=True) for follow in follows_list ]
         except EntityNotFoundError:
-            raise EntityNotFoundError(status_code=404, message="There are no users")
+            raise EntityNotFoundError(status_code=404, message="There are no follows")
     
     async def delete_by_user_id(
         self,
@@ -122,7 +122,7 @@ class FollowMongodbRepo(IFollowRepo):
             ).delete()
             return bool(result.deleted_count) 
         except:
-            raise EntityNotFoundError(status_code=404, message="User not found")
+            raise EntityNotFoundError(status_code=404, message="Follow not found")
     
     async def delete_all(
         self,
@@ -131,4 +131,4 @@ class FollowMongodbRepo(IFollowRepo):
             result = await FollowsCollection.find_all().delete()
             return bool(result.deleted_count) 
         except:
-            raise EntityNotFoundError(status_code=404, message="User not found")
+            raise EntityNotFoundError(status_code=404, message="Follow not found")

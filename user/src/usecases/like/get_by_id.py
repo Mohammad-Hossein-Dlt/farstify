@@ -1,23 +1,23 @@
-from src.repo.interface.follow.Ifollows_repo import IFollowsRepo
-from src.domain.schemas.follow.follow_model import FollowModel
+from src.repo.interface.like.Ilikes_repo import ILikesRepo
+from src.domain.schemas.like.like_model import LikeModel
 from src.infra.exceptions.exceptions import AppBaseException, OperationFailureException
 
-class GetFollow:
+class GetLike:
     
     def __init__(
         self,
-        follow_repo: IFollowsRepo,
+        like_repo: ILikesRepo,
     ):
         
-        self.follow_repo = follow_repo
+        self.like_repo = like_repo
     
     async def execute(
         self,
         target_id: str,
-    ) -> FollowModel:
+    ) -> LikeModel:
         
         try:
-            return await self.follow_repo.get_by_id(target_id)
+            return await self.like_repo.get_by_id(target_id)
         except AppBaseException:
             raise
         except:

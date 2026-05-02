@@ -1,5 +1,5 @@
-from src.repo.interface.follow.Ifollow_repo import IFollowRepo, FollowModel
-from src.models.schemas.user.create_follow_input import CreateFollowInput
+from src.repo.interface.follow.Ifollows_repo import IFollowsRepo, FollowModel
+from src.models.schemas.follow.follow_input import FollowInput
 from src.domain.schemas.follow.follow_model import FollowModel
 from src.models.schemas.operation.operation_output import OperationOutput
 from src.infra.exceptions.exceptions import AppBaseException, OperationFailureException
@@ -8,14 +8,14 @@ class CreateFollow:
     
     def __init__(
         self,
-        follow_repo: IFollowRepo,
+        follow_repo: IFollowsRepo,
     ):
         
         self.follow_repo = follow_repo
     
     async def execute(
         self,
-        entity: CreateFollowInput,
+        entity: FollowInput,
     ) -> FollowModel | OperationOutput:
         
         try:

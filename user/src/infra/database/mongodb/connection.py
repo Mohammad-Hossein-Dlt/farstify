@@ -5,7 +5,8 @@ from beanie import init_beanie
 from .collections.user.user_collection import UserCollection
 from .collections.user.user_image_collection import UserImageCollection
 from .collections.user.user_link_collection import UserLinkCollection
-from .collections.follow.follows import FollowsCollection
+from .collections.follow.follows_collection import FollowsCollection
+from .collections.like.likes_collection import LikesCollection
 
 async def init_mongodb_client(
     host: str,
@@ -34,6 +35,7 @@ async def init_mongodb_client(
             UserImageCollection,
             UserLinkCollection,
             FollowsCollection,
+            LikesCollection,
         ],
     )
     
