@@ -76,18 +76,26 @@ class EpisodeMongodbRepo(IEpisodeRepo):
     async def get_by_document_id(
         self,
         document_id: str,
-        criteria: BaseFilterCriteria,
+        criteria: BaseFilterCriteria | None = None,
     ) -> list[EpisodeModel]:
         
         try:
             document_id = convert_object_id(document_id)
-            episodes_list = await EpisodeCollection.find_many(
+            query = EpisodeCollection.find_many(
                 EpisodeCollection.document_id == document_id,
-            ).skip(
-                criteria.page * criteria.limit
-            ).limit(
-                criteria.limit
-            ).to_list()                  
+            )
+            
+            if criteria:
+                query.skip(
+                    criteria.page * criteria.limit
+                ).limit(
+                    criteria.limit
+                ).sort(
+                    EpisodeCollection.created_at if criteria.order == "asc" else -EpisodeCollection.created_at
+                )
+            
+            episodes_list = await query.to_list()
+    
             return [ EpisodeModel.model_validate(episode, from_attributes=True) for episode in episodes_list ]
         except:
             raise EntityNotFoundError(status_code=404, message="episode not found")
@@ -108,14 +116,21 @@ class EpisodeMongodbRepo(IEpisodeRepo):
     
     async def get_all(
         self,
-        criteria: BaseFilterCriteria,
+        criteria: BaseFilterCriteria | None = None,
     ) -> list[EpisodeModel]:    
         try:
-            episodes_list = await EpisodeCollection.find_all().skip(
-                criteria.page * criteria.limit
-            ).limit(
-                criteria.limit
-            ).to_list()              
+            query = EpisodeCollection.find_all()            
+            if criteria:
+                query.skip(
+                    criteria.page * criteria.limit
+                ).limit(
+                    criteria.limit
+                ).sort(
+                    EpisodeCollection.created_at if criteria.order == "asc" else -EpisodeCollection.created_at
+                )
+            
+            episodes_list = await query.to_list()
+            
             return [ EpisodeModel.model_validate(episode, from_attributes=True) for episode in episodes_list ]
         except:
             raise EntityNotFoundError(status_code=404, message="episode not found")

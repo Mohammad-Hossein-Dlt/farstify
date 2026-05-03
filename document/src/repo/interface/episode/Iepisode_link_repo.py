@@ -35,7 +35,7 @@ class IEpisodeLinkRepo(ABC):
     @abstractmethod
     async def get_by_episode_id(
         episode_id: str,
-        criteria: BaseFilterCriteria,
+        criteria: BaseFilterCriteria | None = None,
     ) -> list[EpisodeLinkModel]:
     
         raise NotImplementedError

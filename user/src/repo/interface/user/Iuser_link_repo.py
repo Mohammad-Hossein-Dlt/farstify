@@ -35,7 +35,7 @@ class IUserLinkRepo(ABC):
     @abstractmethod
     async def get_by_user_id(
         user_id: str,
-        criteria: BaseFilterCriteria,
+        criteria: BaseFilterCriteria | None = None,
     ) -> list[UserLinkModel]:
     
         raise NotImplementedError

@@ -75,18 +75,26 @@ class ArtistLinkMongodbRepo(IArtistLinkRepo):
     async def get_by_artist_id(
         self,
         artist_id: str,
-        criteria: BaseFilterCriteria,
+        criteria: BaseFilterCriteria | None = None,
     ) -> list[ArtistLinkModel]:
         
         try:
             artist_id = convert_object_id(artist_id)
-            links_list = await ArtistLinkCollection.find_many(
+            query = ArtistLinkCollection.find_many(
                 ArtistLinkCollection.artist_id == artist_id,
-            ).skip(
-                criteria.page * criteria.limit
-            ).limit(
-                criteria.limit
-            ).to_list()
+            )
+            
+            if criteria:
+                query.skip(
+                    criteria.page * criteria.limit
+                ).limit(
+                    criteria.limit
+                ).sort(
+                    ArtistLinkCollection.created_at if criteria.order == "asc" else -ArtistLinkCollection.created_at
+                )
+            
+            links_list = await query.to_list()
+
             return [ ArtistLinkModel.model_validate(link, from_attributes=True) for link in links_list ]
         except EntityNotFoundError:
             raise EntityNotFoundError(status_code=404, message="There are no artists")

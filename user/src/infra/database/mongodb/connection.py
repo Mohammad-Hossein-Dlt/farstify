@@ -7,6 +7,8 @@ from .collections.user.user_image_collection import UserImageCollection
 from .collections.user.user_link_collection import UserLinkCollection
 from .collections.follow.follows_collection import FollowsCollection
 from .collections.like.likes_collection import LikesCollection
+from .collections.playlist.playlist_collection import PlaylistCollection
+from .collections.playlist.playlist_item_collection import PlaylistItemCollection
 
 async def init_mongodb_client(
     host: str,
@@ -36,6 +38,8 @@ async def init_mongodb_client(
             UserLinkCollection,
             FollowsCollection,
             LikesCollection,
+            PlaylistCollection,
+            PlaylistItemCollection,
         ],
     )
     

@@ -35,7 +35,7 @@ class IUserImageRepo(ABC):
     @abstractmethod
     async def get_by_user_id(
         user_id: str,
-        criteria: BaseFilterCriteria,
+        criteria: BaseFilterCriteria | None = None,
     ) -> list[UserImageModel]:
     
         raise NotImplementedError

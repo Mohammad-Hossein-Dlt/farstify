@@ -35,7 +35,7 @@ class IDocumentImageRepo(ABC):
     @abstractmethod
     async def get_by_document_id(
         document_id: str,
-        criteria: BaseFilterCriteria,
+        criteria: BaseFilterCriteria | None = None,
     ) -> list[DocumentImageModel]:
     
         raise NotImplementedError

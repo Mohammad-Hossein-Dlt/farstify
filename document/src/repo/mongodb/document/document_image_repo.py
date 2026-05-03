@@ -75,18 +75,26 @@ class DocumentImageMongodbRepo(IDocumentImageRepo):
     async def get_by_document_id(
         self,
         document_id: str,
-        criteria: BaseFilterCriteria,
+        criteria: BaseFilterCriteria | None = None,
     ) -> list[DocumentImageModel]:
         
         try:
             document_id = convert_object_id(document_id)
-            images_list = await DocumentImageCollection.find_many(
+            query = DocumentImageCollection.find_many(
                 DocumentImageCollection.document_id == document_id,
-            ).skip(
-                criteria.page * criteria.limit
-            ).limit(
-                criteria.limit
-            ).to_list()         
+            )
+            
+            if criteria:
+                query.skip(
+                    criteria.page * criteria.limit
+                ).limit(
+                    criteria.limit
+                ).sort(
+                    DocumentImageCollection.created_at if criteria.order == "asc" else -DocumentImageCollection.created_at
+                )
+            
+            images_list = await query.to_list()
+                
             return [ DocumentImageModel.model_validate(image, from_attributes=True) for image in images_list ]
         except EntityNotFoundError:
             raise EntityNotFoundError(status_code=404, message="There are no documents")

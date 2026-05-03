@@ -75,18 +75,26 @@ class EpisodeLinkMongodbRepo(IEpisodeLinkRepo):
     async def get_by_episode_id(
         self,
         episode_id: str,
-        criteria: BaseFilterCriteria,
+        criteria: BaseFilterCriteria | None = None,
     ) -> list[EpisodeLinkModel]:
         
         try:
             episode_id = convert_object_id(episode_id)
-            links_list = await EpisodeLinkCollection.find_many(
+            query = EpisodeLinkCollection.find_many(
                 EpisodeLinkCollection.episode_id == episode_id,
-            ).skip(
-                criteria.page * criteria.limit
-            ).limit(
-                criteria.limit
-            ).to_list()   
+            )
+            
+            if criteria:
+                query.skip(
+                    criteria.page * criteria.limit
+                ).limit(
+                    criteria.limit
+                ).sort(
+                    EpisodeLinkCollection.created_at if criteria.order == "asc" else -EpisodeLinkCollection.created_at
+                )
+            
+            links_list = await query.to_list()
+        
             return [ EpisodeLinkModel.model_validate(link, from_attributes=True) for link in links_list ]
         except EntityNotFoundError:
             raise EntityNotFoundError(status_code=404, message="There are no episodes")

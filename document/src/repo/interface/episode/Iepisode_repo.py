@@ -35,7 +35,7 @@ class IEpisodeRepo(ABC):
     @abstractmethod
     async def get_by_document_id(
         document_id: str,
-        criteria: BaseFilterCriteria,
+        criteria: BaseFilterCriteria | None = None,
     ) -> list[EpisodeModel]:
     
         raise NotImplementedError
@@ -49,7 +49,7 @@ class IEpisodeRepo(ABC):
     
     @abstractmethod
     async def get_all(
-        criteria: BaseFilterCriteria,
+        criteria: BaseFilterCriteria | None = None,
     ) -> list[EpisodeModel]:
     
         raise NotImplementedError

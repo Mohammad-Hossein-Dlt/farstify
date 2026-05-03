@@ -41,7 +41,7 @@ class IUserRepo(ABC):
     
     @abstractmethod
     async def get_all(
-        criteria: BaseFilterCriteria,
+        criteria: BaseFilterCriteria | None = None,
     ) -> list[UserModel]:
     
         raise NotImplementedError

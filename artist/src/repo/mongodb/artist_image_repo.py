@@ -75,18 +75,26 @@ class ArtistImageMongodbRepo(IArtistImageRepo):
     async def get_by_artist_id(
         self,
         artist_id: str,
-        criteria: BaseFilterCriteria,
+        criteria: BaseFilterCriteria | None = None,
     ) -> list[ArtistImageModel]:
         
         try:
             artist_id = convert_object_id(artist_id)
-            images_list = await ArtistImageCollection.find_many(
+            query = ArtistImageCollection.find_many(
                 ArtistImageCollection.artist_id == artist_id,
-            ).skip(
-                criteria.page * criteria.limit
-            ).limit(
-                criteria.limit
-            ).to_list()            
+            )
+            
+            if criteria:
+                query.skip(
+                    criteria.page * criteria.limit
+                ).limit(
+                    criteria.limit
+                ).sort(
+                    ArtistImageCollection.created_at if criteria.order == "asc" else -ArtistImageCollection.created_at
+                )
+            
+            images_list = await query.to_list()
+
             return [ ArtistImageModel.model_validate(image, from_attributes=True) for image in images_list ]
         except EntityNotFoundError:
             raise EntityNotFoundError(status_code=404, message="There are no artists")

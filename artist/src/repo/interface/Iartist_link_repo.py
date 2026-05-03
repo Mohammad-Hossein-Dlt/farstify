@@ -35,7 +35,7 @@ class IArtistLinkRepo(ABC):
     @abstractmethod
     async def get_by_artist_id(
         artist_id: str,
-        criteria: BaseFilterCriteria,
+        criteria: BaseFilterCriteria | None = None,
     ) -> list[ArtistLinkModel]:
     
         raise NotImplementedError

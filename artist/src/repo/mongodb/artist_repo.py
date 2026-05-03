@@ -92,14 +92,21 @@ class ArtistMongodbRepo(IArtistRepo):
     
     async def get_all(
         self,
-        criteria: BaseFilterCriteria,
+        criteria: BaseFilterCriteria | None = None,
     ) -> list[ArtistModel]:    
         try:
-            artists_list = await ArtistCollection.find_all().skip(
-                criteria.page * criteria.limit
-            ).limit(
-                criteria.limit
-            ).to_list()            
+            query = ArtistCollection.find_all()
+            if criteria:
+                query.skip(
+                    criteria.page * criteria.limit
+                ).limit(
+                    criteria.limit
+                ).sort(
+                    ArtistCollection.created_at if criteria.order == "asc" else -ArtistCollection.created_at
+                )
+            
+            artists_list = await query.to_list()
+                       
             return [ ArtistModel.model_validate(artist, from_attributes=True) for artist in artists_list ]
         except:
             raise EntityNotFoundError(status_code=404, message="Artist not found")

@@ -75,18 +75,26 @@ class UserLinkMongodbRepo(IUserLinkRepo):
     async def get_by_user_id(
         self,
         user_id: str,
-        criteria: BaseFilterCriteria,
+        criteria: BaseFilterCriteria | None = None,
     ) -> list[UserLinkModel]:
         
         try:
             user_id = convert_object_id(user_id)
-            links_list = await UserLinkCollection.find_many(
+            query = UserLinkCollection.find_many(
                 UserLinkCollection.user_id == user_id,
-            ).skip(
-                criteria.page * criteria.limit
-            ).limit(
-                criteria.limit
-            ).to_list()
+            )
+            
+            if criteria:
+                query.skip(
+                    criteria.page * criteria.limit
+                ).limit(
+                    criteria.limit
+                ).sort(
+                    UserLinkCollection.created_at if criteria.order == "asc" else -UserLinkCollection.created_at
+                )
+            
+            links_list = await query.to_list()
+            
             return [ UserLinkModel.model_validate(link, from_attributes=True) for link in links_list ]
         except EntityNotFoundError:
             raise EntityNotFoundError(status_code=404, message="There are no users")

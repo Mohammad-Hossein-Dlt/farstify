@@ -75,18 +75,26 @@ class EpisodeImageMongodbRepo(IEpisodeImageRepo):
     async def get_by_episode_id(
         self,
         episode_id: str,
-        criteria: BaseFilterCriteria,
+        criteria: BaseFilterCriteria | None = None,
     ) -> list[EpisodeImageModel]:
         
         try:
             episode_id = convert_object_id(episode_id)
-            images_list = await EpisodeImageCollection.find_many(
+            query = EpisodeImageCollection.find_many(
                 EpisodeImageCollection.episode_id == episode_id,
-            ).skip(
-                criteria.page * criteria.limit
-            ).limit(
-                criteria.limit
-            ).to_list()         
+            )
+            
+            if criteria:
+                query.skip(
+                    criteria.page * criteria.limit
+                ).limit(
+                    criteria.limit
+                ).sort(
+                    EpisodeImageCollection.created_at if criteria.order == "asc" else -EpisodeImageCollection.created_at
+                )
+            
+            images_list = await query.to_list()
+                
             return [ EpisodeImageModel.model_validate(image, from_attributes=True) for image in images_list ]
         except EntityNotFoundError:
             raise EntityNotFoundError(status_code=404, message="There are no episodes")

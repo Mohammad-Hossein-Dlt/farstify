@@ -1,4 +1,4 @@
-from src.repo.interface.follow.Ifollows_repo import IFollowsRepo, FollowModel
+from src.repo.interface.follow.Ifollows_repo import IFollowsRepo
 from src.domain.schemas.follow.follow_model import FollowModel
 from src.infra.database.mongodb.collections.follow.follows_collection import FollowsCollection
 from src.models.schemas.filter.base_filter_criteria import BaseFilterCriteria
@@ -93,20 +93,26 @@ class FollowsMongodbRepo(IFollowsRepo):
     async def get_by_user_id(
         self,
         user_id: str,
-        criteria: BaseFilterCriteria,
+        criteria: BaseFilterCriteria | None = None,
     ) -> list[FollowModel]:
         
         try:
             user_id = convert_object_id(user_id)
-            follows_list = await FollowsCollection.find_many(
+            query = FollowsCollection.find_many(
                 FollowsCollection.user_id == user_id,
-            ).skip(
-                criteria.page * criteria.limit
-            ).limit(
-                criteria.limit
-            ).sort(
-                FollowsCollection.created_at if criteria.order == "asc" else -FollowsCollection.created_at
-            ).to_list()
+            )
+            
+            if criteria:
+                query.skip(
+                    criteria.page * criteria.limit
+                ).limit(
+                    criteria.limit
+                ).sort(
+                    FollowsCollection.created_at if criteria.order == "asc" else -FollowsCollection.created_at
+                )
+            
+            follows_list = await query.to_list()
+            
             return [ FollowModel.model_validate(follow, from_attributes=True) for follow in follows_list ]
         except EntityNotFoundError:
             raise EntityNotFoundError(status_code=404, message="There are no follows")

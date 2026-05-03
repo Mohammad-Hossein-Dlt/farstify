@@ -75,18 +75,26 @@ class DocumentLinkMongodbRepo(IDocumentLinkRepo):
     async def get_by_document_id(
         self,
         document_id: str,
-        criteria: BaseFilterCriteria,
+        criteria: BaseFilterCriteria | None = None,
     ) -> list[DocumentLinkModel]:
         
         try:
             document_id = convert_object_id(document_id)
-            links_list = await DocumentLinkCollection.find_many(
+            query = DocumentLinkCollection.find_many(
                 DocumentLinkCollection.document_id == document_id,
-            ).skip(
-                criteria.page * criteria.limit
-            ).limit(
-                criteria.limit
-            ).to_list()
+            )
+            
+            if criteria:
+                query.skip(
+                    criteria.page * criteria.limit
+                ).limit(
+                    criteria.limit
+                ).sort(
+                    DocumentLinkCollection.created_at if criteria.order == "asc" else -DocumentLinkCollection.created_at
+                )
+            
+            links_list = await query.to_list()
+            
             return [ DocumentLinkModel.model_validate(link, from_attributes=True) for link in links_list ]
         except EntityNotFoundError:
             raise EntityNotFoundError(status_code=404, message="There are no documents")

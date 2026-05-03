@@ -93,20 +93,26 @@ class LikeMongodbRepo(ILikesRepo):
     async def get_by_user_id(
         self,
         user_id: str,
-        criteria: BaseFilterCriteria,
+        criteria: BaseFilterCriteria | None = None,
     ) -> list[LikeModel]:
         
         try:
             user_id = convert_object_id(user_id)
-            likes_list = await LikesCollection.find_many(
+            query = LikesCollection.find_many(
                 LikesCollection.user_id == user_id,
-            ).skip(
-                criteria.page * criteria.limit
-            ).limit(
-                criteria.limit
-            ).sort(
-                LikesCollection.created_at if criteria.order == "asc" else -LikesCollection.created_at
-            ).to_list()
+            )
+            
+            if criteria:
+                query.skip(
+                    criteria.page * criteria.limit
+                ).limit(
+                    criteria.limit
+                ).sort(
+                    LikesCollection.created_at if criteria.order == "asc" else -LikesCollection.created_at
+                )
+            
+            likes_list = await query.to_list()
+            
             return [ LikeModel.model_validate(like, from_attributes=True) for like in likes_list ]
         except EntityNotFoundError:
             raise EntityNotFoundError(status_code=404, message="There are no likes")

@@ -35,7 +35,7 @@ class IDocumentRepo(ABC):
     @abstractmethod
     async def get_by_artist_id(
         artist_id: str,
-        criteria: BaseFilterCriteria,
+        criteria: BaseFilterCriteria | None = None,
     ) -> list[DocumentModel]:
     
         raise NotImplementedError
@@ -49,7 +49,7 @@ class IDocumentRepo(ABC):
     
     @abstractmethod
     async def get_all(
-        criteria: BaseFilterCriteria,
+        criteria: BaseFilterCriteria | None = None,
     ) -> list[DocumentModel]:
     
         raise NotImplementedError

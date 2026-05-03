@@ -76,18 +76,26 @@ class DocumentMongodbRepo(IDocumentRepo):
     async def get_by_artist_id(
         self,
         artist_id: str,
-        criteria: BaseFilterCriteria,
+        criteria: BaseFilterCriteria | None = None,
     ) -> list[DocumentModel]:
         
         try:
             artist_id = convert_object_id(artist_id)
-            documents_list = await DocumentCollection.find_many(
+            query = DocumentCollection.find_many(
                 DocumentCollection.artist_id == artist_id,
-            ).skip(
-                criteria.page * criteria.limit
-            ).limit(
-                criteria.limit
-            ).to_list()                    
+            )
+            
+            if criteria:
+                query.skip(
+                    criteria.page * criteria.limit
+                ).limit(
+                    criteria.limit
+                ).sort(
+                    DocumentCollection.created_at if criteria.order == "asc" else -DocumentCollection.created_at
+                )
+            
+            documents_list = await query.to_list()               
+            
             return [ DocumentModel.model_validate(document, from_attributes=True) for document in documents_list ]
         except:
             raise EntityNotFoundError(status_code=404, message="document not found")

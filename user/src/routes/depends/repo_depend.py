@@ -17,6 +17,12 @@ from src.repo.mongodb.follow.follows_repo import FollowsMongodbRepo
 
 from src.repo.interface.like.Ilikes_repo import ILikesRepo
 from src.repo.mongodb.like.likes_repo import LikeMongodbRepo
+
+from src.repo.interface.playlist.Iplaylist_repo import IPlaylistRepo
+from src.repo.mongodb.playlist.playlist_repo import PlaylistMongodbRepo
+   
+from src.repo.interface.playlist.Iplaylist_item_repo import IPlaylistItemRepo
+from src.repo.mongodb.playlist.playlist_item_repo import PlaylistItemMongodbRepo
    
 def user_repo_depend(
     db_client: AsyncMongoClient | Session = Depends(db_client_depend)
@@ -52,3 +58,17 @@ def like_repo_depend(
 
     if isinstance(db_client, AsyncMongoClient):
         return LikeMongodbRepo()
+    
+def playlist_repo_depend(
+    db_client: AsyncMongoClient | Session = Depends(db_client_depend)
+) -> IPlaylistRepo:
+
+    if isinstance(db_client, AsyncMongoClient):
+        return PlaylistMongodbRepo()
+        
+def playlist_item_repo_depend(
+    db_client: AsyncMongoClient | Session = Depends(db_client_depend)
+) -> IPlaylistItemRepo:
+
+    if isinstance(db_client, AsyncMongoClient):
+        return PlaylistItemMongodbRepo()

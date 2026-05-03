@@ -75,18 +75,26 @@ class UserImageMongodbRepo(IUserImageRepo):
     async def get_by_user_id(
         self,
         user_id: str,
-        criteria: BaseFilterCriteria,
+        criteria: BaseFilterCriteria | None = None,
     ) -> list[UserImageModel]:
         
         try:
             user_id = convert_object_id(user_id)
-            images_list = await UserImageCollection.find_many(
+            query = UserImageCollection.find_many(
                 UserImageCollection.user_id == user_id,
-            ).skip(
-                criteria.page * criteria.limit
-            ).limit(
-                criteria.limit
-            ).to_list()       
+            )
+            
+            if criteria:
+                query.skip(
+                    criteria.page * criteria.limit
+                ).limit(
+                    criteria.limit
+                ).sort(
+                    UserImageCollection.created_at if criteria.order == "asc" else -UserImageCollection.created_at
+                )
+            
+            images_list = await query.to_list()
+                  
             return [ UserImageModel.model_validate(image, from_attributes=True) for image in images_list ]
         except EntityNotFoundError:
             raise EntityNotFoundError(status_code=404, message="There are no users")

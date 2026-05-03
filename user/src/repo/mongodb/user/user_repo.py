@@ -92,14 +92,22 @@ class UserMongodbRepo(IUserRepo):
     
     async def get_all(
         self,
-        criteria: BaseFilterCriteria,
+        criteria: BaseFilterCriteria | None = None,
     ) -> list[UserModel]:    
         try:
-            users_list = await UserCollection.find_all().skip(
-                criteria.page * criteria.limit
-            ).limit(
-                criteria.limit
-            ).to_list()           
+            query = UserCollection.find_all()
+            
+            if criteria:
+                query.skip(
+                    criteria.page * criteria.limit
+                ).limit(
+                    criteria.limit
+                ).sort(
+                    UserCollection.created_at if criteria.order == "asc" else -UserCollection.created_at
+                )
+            
+            users_list = await query.to_list()
+          
             return [ UserModel.model_validate(user, from_attributes=True) for user in users_list ]
         except:
             raise EntityNotFoundError(status_code=404, message="User not found")
