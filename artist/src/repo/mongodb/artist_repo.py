@@ -17,7 +17,7 @@ class ArtistMongodbRepo(IArtistRepo):
             raise DuplicateEntityError(409, "Artist already exist")
         except EntityNotFoundError:
             new_artist = await ArtistCollection(
-                **artist.model_dump(exclude={"id", "_id"}),
+                **artist.model_dump_for_db(),
             ).insert()
             return ArtistModel.model_validate(new_artist, from_attributes=True)
     
@@ -58,10 +58,9 @@ class ArtistMongodbRepo(IArtistRepo):
         
         try:               
             
-            to_update: dict = artist.custom_model_dump(
+            to_update: dict = artist.model_dump_for_db(
                 # exclude_unset=True,
                 exclude_none=True,
-                db_stack="no-sql",
             )
             
             await ArtistCollection.find(

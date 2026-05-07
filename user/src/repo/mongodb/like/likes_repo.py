@@ -15,7 +15,7 @@ class LikeMongodbRepo(ILikesRepo):
         
         try:
             new_user = await LikesCollection(
-                **like.model_dump(exclude={"id", "_id"}),
+                **like.model_dump_for_db(),
             ).insert()
             return LikeModel.model_validate(new_user, from_attributes=True)
         except:
@@ -59,9 +59,8 @@ class LikeMongodbRepo(ILikesRepo):
     ) -> LikeModel:
         
         try:               
-            to_update: dict = like.custom_model_dump(
+            to_update: dict = like.model_dump_for_db(
                 exclude_none=True,
-                db_stack="no-sql",
             )
             
             await LikesCollection.find(

@@ -18,9 +18,9 @@ class CategoryMongodbRepo(ICategoryRepo):
             await self.check_unique(category)
             raise DuplicateEntityError(409, "Category already exist")
         except EntityNotFoundError:
-            new_category = await CategoryCollection.insert(
-                CategoryCollection(**category.model_dump(exclude={"id", "_id"})),
-            )
+            new_category = await CategoryCollection(
+                **category.model_dump_for_db(),
+            ).insert()
             return CategoryModel.model_validate(new_category, from_attributes=True)
     
     async def check_unique(
@@ -63,13 +63,9 @@ class CategoryMongodbRepo(ICategoryRepo):
         
         try:               
             
-            to_update: dict = category.custom_model_dump(
+            to_update: dict = category.model_dump_for_db(
                 exclude_unset=True,
                 exclude_none=True,
-                exclude={
-                    "id",
-                },
-                db_stack="no-sql",
             )
             
             await CategoryCollection.find(

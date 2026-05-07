@@ -14,11 +14,10 @@ class PlaylistMongodbRepo(IPlaylistRepo):
         
         try:
             new_playlist = await PlaylistCollection(
-                **playlist.model_dump(exclude={"id", "_id"}),
+                **playlist.model_dump_for_db(),
             ).insert()
             return PlaylistModel.model_validate(new_playlist, from_attributes=True)
         except:
-            raise
             ...
 
     async def get_by_id(
@@ -42,9 +41,8 @@ class PlaylistMongodbRepo(IPlaylistRepo):
     ) -> PlaylistModel:
         
         try:               
-            to_update: dict = playlist.custom_model_dump(
+            to_update: dict = playlist.model_dump_for_db(
                 exclude_none=True,
-                db_stack="no-sql",
             )
             
             await PlaylistCollection.find(

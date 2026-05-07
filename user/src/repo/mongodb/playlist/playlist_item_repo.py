@@ -14,7 +14,7 @@ class PlaylistItemMongodbRepo(IPlaylistItemRepo):
         
         try:
             new_user = await PlaylistItemCollection(
-                **item.model_dump(exclude={"id", "_id"}),
+                **item.model_dump_for_db(),
             ).insert()
             return PlaylistItemModel.model_validate(new_user, from_attributes=True)
         except:
@@ -41,9 +41,8 @@ class PlaylistItemMongodbRepo(IPlaylistItemRepo):
     ) -> PlaylistItemModel:
         
         try:               
-            to_update: dict = playlist.custom_model_dump(
+            to_update: dict = playlist.model_dump_for_db(
                 exclude_none=True,
-                db_stack="no-sql",
             )
             
             await PlaylistItemCollection.find(

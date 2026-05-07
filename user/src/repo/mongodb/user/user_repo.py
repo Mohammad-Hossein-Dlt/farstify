@@ -17,7 +17,7 @@ class UserMongodbRepo(IUserRepo):
             raise DuplicateEntityError(409, "User already exist")
         except EntityNotFoundError:
             new_user = await UserCollection(
-                **user.model_dump(exclude={"id", "_id"}),
+                **user.model_dump_for_db(),
             ).insert()
             return UserModel.model_validate(new_user, from_attributes=True)
     
@@ -58,10 +58,9 @@ class UserMongodbRepo(IUserRepo):
         
         try:               
             
-            to_update: dict = user.custom_model_dump(
+            to_update: dict = user.model_dump_for_db(
                 # exclude_unset=True,
                 exclude_none=True,
-                db_stack="no-sql",
             )
             
             await UserCollection.find(

@@ -13,7 +13,7 @@ class EpisodeImageMongodbRepo(IEpisodeImageRepo):
     ) -> EpisodeImageModel:
         
         new_episode = await EpisodeImageCollection(
-            **image.model_dump(exclude={"id", "_id"}),
+            **image.model_dump_for_db(),
         ).insert()
         return EpisodeImageModel.model_validate(new_episode, from_attributes=True)
         
@@ -41,9 +41,8 @@ class EpisodeImageMongodbRepo(IEpisodeImageRepo):
         
         try:               
             
-            to_update: dict = image.custom_model_dump(
+            to_update: dict = image.model_dump_for_db(
                 exclude_none=True,
-                db_stack="no-sql",
             )
             
             await EpisodeImageCollection.find(

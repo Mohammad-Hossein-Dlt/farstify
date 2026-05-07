@@ -13,7 +13,7 @@ class DocumentMongodbRepo(IDocumentRepo):
     ) -> DocumentModel:
 
         new_document = await DocumentCollection(
-            **document.model_dump(exclude={"id", "_id"}),
+            **document.model_dump_for_db(),
         ).insert()
         return DocumentModel.model_validate(new_document, from_attributes=True)
         
@@ -41,10 +41,9 @@ class DocumentMongodbRepo(IDocumentRepo):
         
         try:               
             
-            to_update: dict = document.custom_model_dump(
+            to_update: dict = document.model_dump_for_db(
                 # exclude_unset=True,
                 exclude_none=True,
-                db_stack="no-sql",
             )
             
             await DocumentCollection.find(

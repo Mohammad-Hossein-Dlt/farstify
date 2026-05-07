@@ -12,11 +12,14 @@ class UserImageMongodbRepo(IUserImageRepo):
         image: UserImageModel,
     ) -> UserImageModel:
         
-        new_user = await UserImageCollection(
-            **image.model_dump(exclude={"id", "_id"}),
-        ).insert()
-        return UserImageModel.model_validate(new_user, from_attributes=True)
-        
+        try:
+            new_user = await UserImageCollection(
+                **image.model_dump_for_db(),
+            ).insert()
+            return UserImageModel.model_validate(new_user, from_attributes=True)
+        except:
+            ...
+         
     async def get_by_id(
         self,
         image_id: str,
@@ -41,9 +44,8 @@ class UserImageMongodbRepo(IUserImageRepo):
         
         try:               
             
-            to_update: dict = image.custom_model_dump(
+            to_update: dict = image.model_dump_for_db(
                 exclude_none=True,
-                db_stack="no-sql",
             )
             
             await UserImageCollection.find(

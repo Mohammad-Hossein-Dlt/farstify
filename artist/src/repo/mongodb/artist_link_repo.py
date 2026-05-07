@@ -13,7 +13,7 @@ class ArtistLinkMongodbRepo(IArtistLinkRepo):
     ) -> ArtistLinkModel:
         
         new_link = await ArtistLinkCollection(
-            **link.model_dump(exclude={"id", "_id"}),
+            **link.model_dump_for_db(),
         ).insert()
         return ArtistLinkModel.model_validate(new_link, from_attributes=True)
         
@@ -41,9 +41,8 @@ class ArtistLinkMongodbRepo(IArtistLinkRepo):
         
         try:               
             
-            to_update: dict = link.custom_model_dump(
+            to_update: dict = link.model_dump_for_db(
                 exclude_none=True,
-                db_stack="no-sql",
             )
             
             await ArtistLinkCollection.find(

@@ -15,7 +15,7 @@ class FollowsMongodbRepo(IFollowsRepo):
         
         try:
             new_user = await FollowsCollection(
-                **follow.model_dump(exclude={"id", "_id"}),
+                **follow.model_dump_for_db(),
             ).insert()
             return FollowModel.model_validate(new_user, from_attributes=True)
         except:
@@ -59,9 +59,8 @@ class FollowsMongodbRepo(IFollowsRepo):
     ) -> FollowModel:
         
         try:               
-            to_update: dict = follow.custom_model_dump(
+            to_update: dict = follow.model_dump_for_db(
                 exclude_none=True,
-                db_stack="no-sql",
             )
             
             await FollowsCollection.find(

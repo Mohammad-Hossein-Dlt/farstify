@@ -13,7 +13,7 @@ class ArtistImageMongodbRepo(IArtistImageRepo):
     ) -> ArtistImageModel:
         
         new_artist = await ArtistImageCollection(
-            **image.model_dump(exclude={"id", "_id"}),
+            **image.model_dump_for_db(),
         ).insert()
         return ArtistImageModel.model_validate(new_artist, from_attributes=True)
         
@@ -41,9 +41,8 @@ class ArtistImageMongodbRepo(IArtistImageRepo):
         
         try:               
             
-            to_update: dict = image.custom_model_dump(
+            to_update: dict = image.model_dump_for_db(
                 exclude_none=True,
-                db_stack="no-sql",
             )
             
             await ArtistImageCollection.find(

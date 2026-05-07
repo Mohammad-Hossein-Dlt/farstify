@@ -13,7 +13,7 @@ class DocumentImageMongodbRepo(IDocumentImageRepo):
     ) -> DocumentImageModel:
         
         new_document = await DocumentImageCollection(
-            **image.model_dump(exclude={"id", "_id"}),
+            **image.model_dump_for_db(),
         ).insert()
         return DocumentImageModel.model_validate(new_document, from_attributes=True)
         
@@ -41,9 +41,8 @@ class DocumentImageMongodbRepo(IDocumentImageRepo):
         
         try:               
             
-            to_update: dict = image.custom_model_dump(
+            to_update: dict = image.model_dump_for_db(
                 exclude_none=True,
-                db_stack="no-sql",
             )
             
             await DocumentImageCollection.find(

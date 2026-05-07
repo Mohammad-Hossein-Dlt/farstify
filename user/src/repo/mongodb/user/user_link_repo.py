@@ -12,11 +12,14 @@ class UserLinkMongodbRepo(IUserLinkRepo):
         link: UserLinkModel,
     ) -> UserLinkModel:
         
-        new_link = await UserLinkCollection(
-            **link.model_dump(exclude={"id", "_id"}),
-        ).insert()
-        return UserLinkModel.model_validate(new_link, from_attributes=True)
-        
+        try:
+            new_link = await UserLinkCollection(
+                **link.model_dump_for_db(),
+            ).insert()
+            return UserLinkModel.model_validate(new_link, from_attributes=True)
+        except:
+            ...
+                    
     async def get_by_id(
         self,
         link_id: str,
@@ -41,9 +44,8 @@ class UserLinkMongodbRepo(IUserLinkRepo):
         
         try:               
             
-            to_update: dict = link.custom_model_dump(
+            to_update: dict = link.model_dump_for_db(
                 exclude_none=True,
-                db_stack="no-sql",
             )
             
             await UserLinkCollection.find(

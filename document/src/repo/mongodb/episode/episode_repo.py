@@ -13,7 +13,7 @@ class EpisodeMongodbRepo(IEpisodeRepo):
     ) -> EpisodeModel:
 
         new_episode = await EpisodeCollection(
-            **episode.model_dump(exclude={"id", "_id"}),
+            **episode.model_dump_for_db(),
         ).insert()
         return EpisodeModel.model_validate(new_episode, from_attributes=True)
         
@@ -41,10 +41,9 @@ class EpisodeMongodbRepo(IEpisodeRepo):
         
         try:               
             
-            to_update: dict = episode.custom_model_dump(
+            to_update: dict = episode.model_dump_for_db(
                 # exclude_unset=True,
                 exclude_none=True,
-                db_stack="no-sql",
             )
             
             await EpisodeCollection.find(
