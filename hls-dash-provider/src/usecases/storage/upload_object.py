@@ -22,7 +22,7 @@ class UploadObject:
     
     async def execute(
         self,
-        path: str,
+        storage_path: str,
         format: Format,
         file: tempfile.SpooledTemporaryFile | str,
         file_name: str,
@@ -32,24 +32,26 @@ class UploadObject:
         
         try:
             
-            
-            object_name = path
-            if path.endswith("/"):
+            object_name = storage_path
+            if storage_path.endswith("/"):
                 object_name += file_name
             else:
                 object_name += "/" + file_name
             
             await self.delete_cache_usecase.execute(f"convert:{object_name}")
-                        
-            result = await self.storage_repo.upload_object(
-                file,
-                object_name,
-                file_size,
-                content_type,
-            )
+            await self.storage_repo.delete_objects(storage_path)
             
+            result = await self.storage_repo.delete_objects(storage_path)
             if result:
-                await self.broker_service.convert(object_name, format)
+                result = await self.storage_repo.upload_object(
+                    file,
+                    object_name,
+                    file_size,
+                    content_type,
+                )
+                
+                if result:
+                    await self.broker_service.convert(object_name, format)
             
             return OperationOutput(id=None, request="upload-object", status=result)
         except AppBaseException:

@@ -13,14 +13,12 @@ class Player:
     
     def execute(
         self,
-        object_name: str,
+        path: str,
         format: Format,
     ) -> str:
         
         try:
-            
-            url = f"http://localhost:9001/{object_name}"
-            
+            url = f"http://localhost:9001/{path}"
             if not url.endswith("/"):
                 url += "/"
                 

@@ -9,12 +9,12 @@ from src.infra.exceptions.exceptions import AppBaseException
     "/objects",
 )
 async def delete_objects(
-    path: str,
+    storage_path: str,
     storage_repo: IStorageRepo = Depends(storage_repo_depend),
 ):
     try:
         upload_file_usecase = DeleteObjects(storage_repo)
-        output = await upload_file_usecase.execute(path)
+        output = await upload_file_usecase.execute(storage_path)
         return output.model_dump(mode="json")
     except AppBaseException as ex:
         raise HTTPException(status_code=ex.status_code, detail=str(ex))

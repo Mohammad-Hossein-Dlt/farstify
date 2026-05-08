@@ -6,7 +6,7 @@ from sqlalchemy import text
 
 async def db_health_check_depend(
     client: AsyncMongoClient | Session = Depends(db_client_depend)
-):
+) -> bool:
     if isinstance(client, Session):
         try:
             request = client.execute(text("SELECT 1"))

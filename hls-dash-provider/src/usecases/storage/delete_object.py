@@ -13,14 +13,14 @@ class DeleteObject:
     
     async def execute(
         self,
-        object_name: str,
+        storage_path: str,
     ) -> OperationOutput:
         
         try:
-            check_object = await self.storage_repo.get_object_stat(object_name)
             status = False
+            check_object = await self.storage_repo.get_object_stat(storage_path)
             if check_object:
-                status = await self.storage_repo.delete_object(object_name)
+                status = await self.storage_repo.delete_object(storage_path)
             return OperationOutput(id=None, request="delete-object", status=status)
         except AppBaseException:
             raise

@@ -8,17 +8,17 @@ from src.infra.fastapi_config.template_engine import templates
 from src.infra.exceptions.exceptions import AppBaseException
 
 @router.get(
-    "/{object_name:path}",
+    "/{storage_path:path}",
 )
 async def player(
     request: Request,
     format: Format,
-    object_name: str,
+    storage_path: str,
     storage_repo: IStorageRepo = Depends(storage_repo_depend),
 ):
     try:
         player_usecase = Player(storage_repo)
-        output = player_usecase.execute(object_name, format)
+        output = player_usecase.execute(storage_path, format)
         if format == "dash":
             return templates.TemplateResponse(request, "dash_player.html", {"url": output})
         elif format == "hls":

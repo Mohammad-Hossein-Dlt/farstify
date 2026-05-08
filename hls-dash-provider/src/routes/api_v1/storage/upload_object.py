@@ -11,10 +11,10 @@ from src.usecases.storage.upload_object import UploadObject
 from src.infra.exceptions.exceptions import AppBaseException
 
 @router.post(
-    "/object/{object_name:path}",
+    "/object/{path:path}",
 )
 async def upload_object(
-    object_name: str,
+    storage_path: str,
     format: Format,
     file: UploadFile,
     storage_repo: IStorageRepo = Depends(storage_repo_depend),
@@ -24,7 +24,7 @@ async def upload_object(
     try:
         upload_file_usecase = UploadObject(storage_repo, cache_repo, broker_service)
         output = await upload_file_usecase.execute(
-            object_name,
+            storage_path,
             format,
             file.file,
             file.filename,
