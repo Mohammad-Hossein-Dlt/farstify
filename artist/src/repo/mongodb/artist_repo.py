@@ -3,7 +3,7 @@ from src.domain.schemas.artist.artist_model import ArtistModel
 from src.infra.database.mongodb.collections.artist_collection import ArtistCollection
 from src.models.schemas.filter.base_filter_criteria import BaseFilterCriteria
 from src.infra.exceptions.exceptions import EntityNotFoundError, DuplicateEntityError
-from src.infra.utils.convert_id import convert_object_id
+from src.infra.utils.convert_id import convert_database_id
 
 class ArtistMongodbRepo(IArtistRepo):
         
@@ -17,7 +17,7 @@ class ArtistMongodbRepo(IArtistRepo):
             raise DuplicateEntityError(409, "Artist already exist")
         except EntityNotFoundError:
             new_artist = await ArtistCollection(
-                **artist.model_dump_for_db(),
+                **artist.model_dump_for_db(dump_for="create"),
             ).insert()
             return ArtistModel.model_validate(new_artist, from_attributes=True)
     
@@ -41,7 +41,7 @@ class ArtistMongodbRepo(IArtistRepo):
         
         try:
                                     
-            artist_id = convert_object_id(artist_id)
+            artist_id = convert_database_id(artist_id)
             
             artist = await ArtistCollection.find_one(
                 ArtistCollection.id == artist_id,
@@ -59,7 +59,7 @@ class ArtistMongodbRepo(IArtistRepo):
         try:               
             
             to_update: dict = artist.model_dump_for_db(
-                # exclude_unset=True,
+                dump_for="update",
                 exclude_none=True,
             )
             
@@ -81,7 +81,7 @@ class ArtistMongodbRepo(IArtistRepo):
     ) -> bool:
         
         try:
-            artist_id = convert_object_id(artist_id)
+            artist_id = convert_database_id(artist_id)
             delete_artist = await ArtistCollection.find(
                 ArtistCollection.id == artist_id,
             ).delete()                       
@@ -101,7 +101,7 @@ class ArtistMongodbRepo(IArtistRepo):
                 ).limit(
                     criteria.limit
                 ).sort(
-                    ArtistCollection.created_at if criteria.order == "asc" else -ArtistCollection.created_at
+                    ArtistCollection.id if criteria.order == "asc" else -ArtistCollection.id
                 )
             
             artists_list = await query.to_list()

@@ -1,6 +1,6 @@
 from bson.objectid import ObjectId
 
-def convert_object_id(
+def convert_database_id(
     _id: str | None,
 ) -> ObjectId | int | str | None:
     

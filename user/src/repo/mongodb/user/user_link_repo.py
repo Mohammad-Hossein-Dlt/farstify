@@ -3,7 +3,7 @@ from src.domain.schemas.user.user_link import UserLinkModel
 from src.infra.database.mongodb.collections.user.user_link_collection import UserLinkCollection
 from src.models.schemas.filter.base_filter_criteria import BaseFilterCriteria
 from src.infra.exceptions.exceptions import EntityNotFoundError
-from src.infra.utils.convert_id import convert_object_id
+from src.infra.utils.convert_id import convert_database_id
 
 class UserLinkMongodbRepo(IUserLinkRepo):
         
@@ -14,7 +14,7 @@ class UserLinkMongodbRepo(IUserLinkRepo):
         
         try:
             new_link = await UserLinkCollection(
-                **link.model_dump_for_db(),
+                **link.model_dump_for_db(dump_for="create"),
             ).insert()
             return UserLinkModel.model_validate(new_link, from_attributes=True)
         except:
@@ -27,7 +27,7 @@ class UserLinkMongodbRepo(IUserLinkRepo):
         
         try:
                                     
-            link_id = convert_object_id(link_id)
+            link_id = convert_database_id(link_id)
             
             link = await UserLinkCollection.find_one(
                 UserLinkCollection.id == link_id,
@@ -45,6 +45,7 @@ class UserLinkMongodbRepo(IUserLinkRepo):
         try:               
             
             to_update: dict = link.model_dump_for_db(
+                dump_for="update",
                 exclude_none=True,
             )
             
@@ -66,7 +67,7 @@ class UserLinkMongodbRepo(IUserLinkRepo):
     ) -> bool:
         
         try:
-            link_id = convert_object_id(link_id)
+            link_id = convert_database_id(link_id)
             result = await UserLinkCollection.find(
                 UserLinkCollection.id == link_id,
             ).delete()                       
@@ -81,7 +82,7 @@ class UserLinkMongodbRepo(IUserLinkRepo):
     ) -> list[UserLinkModel]:
         
         try:
-            user_id = convert_object_id(user_id)
+            user_id = convert_database_id(user_id)
             query = UserLinkCollection.find_many(
                 UserLinkCollection.user_id == user_id,
             )
@@ -92,7 +93,7 @@ class UserLinkMongodbRepo(IUserLinkRepo):
                 ).limit(
                     criteria.limit
                 ).sort(
-                    UserLinkCollection.created_at if criteria.order == "asc" else -UserLinkCollection.created_at
+                    UserLinkCollection.id if criteria.order == "asc" else -UserLinkCollection.id
                 )
             
             links_list = await query.to_list()
@@ -106,7 +107,7 @@ class UserLinkMongodbRepo(IUserLinkRepo):
         user_id: str,
     ) -> bool:
         try:
-            user_id = convert_object_id(user_id)
+            user_id = convert_database_id(user_id)
             result = await UserLinkCollection.find(
                 UserLinkCollection.user_id == user_id
             ).delete()

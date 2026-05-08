@@ -3,7 +3,7 @@ from src.domain.schemas.artist.artist_image import ArtistImageModel
 from src.infra.database.mongodb.collections.artist_image_collection import ArtistImageCollection
 from src.models.schemas.filter.base_filter_criteria import BaseFilterCriteria
 from src.infra.exceptions.exceptions import EntityNotFoundError
-from src.infra.utils.convert_id import convert_object_id
+from src.infra.utils.convert_id import convert_database_id
 
 class ArtistImageMongodbRepo(IArtistImageRepo):
         
@@ -13,7 +13,7 @@ class ArtistImageMongodbRepo(IArtistImageRepo):
     ) -> ArtistImageModel:
         
         new_artist = await ArtistImageCollection(
-            **image.model_dump_for_db(),
+            **image.model_dump_for_db(dump_for="create"),
         ).insert()
         return ArtistImageModel.model_validate(new_artist, from_attributes=True)
         
@@ -24,7 +24,7 @@ class ArtistImageMongodbRepo(IArtistImageRepo):
         
         try:
                                     
-            image_id = convert_object_id(image_id)
+            image_id = convert_database_id(image_id)
             
             image = await ArtistImageCollection.find_one(
                 ArtistImageCollection.id == image_id,
@@ -42,6 +42,7 @@ class ArtistImageMongodbRepo(IArtistImageRepo):
         try:               
             
             to_update: dict = image.model_dump_for_db(
+                dump_for="update",
                 exclude_none=True,
             )
             
@@ -63,7 +64,7 @@ class ArtistImageMongodbRepo(IArtistImageRepo):
     ) -> bool:
         
         try:
-            image_id = convert_object_id(image_id)
+            image_id = convert_database_id(image_id)
             result = await ArtistImageCollection.find(
                 ArtistImageCollection.id == image_id,
             ).delete()                       
@@ -78,7 +79,7 @@ class ArtistImageMongodbRepo(IArtistImageRepo):
     ) -> list[ArtistImageModel]:
         
         try:
-            artist_id = convert_object_id(artist_id)
+            artist_id = convert_database_id(artist_id)
             query = ArtistImageCollection.find_many(
                 ArtistImageCollection.artist_id == artist_id,
             )
@@ -89,7 +90,7 @@ class ArtistImageMongodbRepo(IArtistImageRepo):
                 ).limit(
                     criteria.limit
                 ).sort(
-                    ArtistImageCollection.created_at if criteria.order == "asc" else -ArtistImageCollection.created_at
+                    ArtistImageCollection.id if criteria.order == "asc" else -ArtistImageCollection.id
                 )
             
             images_list = await query.to_list()
@@ -103,7 +104,7 @@ class ArtistImageMongodbRepo(IArtistImageRepo):
         artist_id: str,
     ) -> bool:
         try:
-            artist_id = convert_object_id(artist_id)
+            artist_id = convert_database_id(artist_id)
             result = await ArtistImageCollection.find(
                 ArtistImageCollection.artist_id == artist_id
             ).delete()

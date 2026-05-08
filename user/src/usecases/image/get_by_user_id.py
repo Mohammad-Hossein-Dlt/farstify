@@ -30,7 +30,6 @@ class GetAllImages:
                 if criteria.order == "asc":
                     images.sort(key=lambda x: (x.order is None, x.order))
                 elif criteria.order == "desc":
-                    images.reverse()
                     images.sort(key=lambda x: (0 if x.order is None else 1, x.order), reverse=True)
             return images
         except AppBaseException:

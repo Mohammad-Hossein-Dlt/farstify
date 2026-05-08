@@ -3,7 +3,7 @@ from src.domain.schemas.playlist.playlist_item_model import PlaylistItemModel
 from src.infra.database.mongodb.collections.playlist.playlist_item_collection import PlaylistItemCollection
 from src.models.schemas.filter.base_filter_criteria import BaseFilterCriteria
 from src.infra.exceptions.exceptions import EntityNotFoundError
-from src.infra.utils.convert_id import convert_object_id
+from src.infra.utils.convert_id import convert_database_id
 
 class PlaylistItemMongodbRepo(IPlaylistItemRepo):
                 
@@ -14,7 +14,7 @@ class PlaylistItemMongodbRepo(IPlaylistItemRepo):
         
         try:
             new_user = await PlaylistItemCollection(
-                **item.model_dump_for_db(),
+                **item.model_dump_for_db(dump_for="create"),
             ).insert()
             return PlaylistItemModel.model_validate(new_user, from_attributes=True)
         except:
@@ -26,7 +26,7 @@ class PlaylistItemMongodbRepo(IPlaylistItemRepo):
     ) -> PlaylistItemModel:
         
         try:
-            item_id = convert_object_id(item_id)
+            item_id = convert_database_id(item_id)
             playlist = await PlaylistItemCollection.find_one(
                 PlaylistItemCollection.id == item_id,
             )
@@ -42,6 +42,7 @@ class PlaylistItemMongodbRepo(IPlaylistItemRepo):
         
         try:               
             to_update: dict = playlist.model_dump_for_db(
+                dump_for="update",
                 exclude_none=True,
             )
             
@@ -63,7 +64,7 @@ class PlaylistItemMongodbRepo(IPlaylistItemRepo):
     ) -> bool:
         
         try:
-            item_id = convert_object_id(item_id)
+            item_id = convert_database_id(item_id)
             result = await PlaylistItemCollection.find(
                 PlaylistItemCollection.id == item_id,
             ).delete()                       
@@ -78,7 +79,7 @@ class PlaylistItemMongodbRepo(IPlaylistItemRepo):
     ) -> list[PlaylistItemModel]:
         
         try:
-            playlist_id = convert_object_id(playlist_id)
+            playlist_id = convert_database_id(playlist_id)
             query = PlaylistItemCollection.find_many(
                 PlaylistItemCollection.playlist_id == playlist_id,
             )
@@ -89,7 +90,7 @@ class PlaylistItemMongodbRepo(IPlaylistItemRepo):
                 ).limit(
                     criteria.limit
                 ).sort(
-                    PlaylistItemCollection.created_at if criteria.order == "asc" else -PlaylistItemCollection.created_at
+                    PlaylistItemCollection.id if criteria.order == "asc" else -PlaylistItemCollection.id
                 )
             
             items_list = await query.to_list()
@@ -102,7 +103,7 @@ class PlaylistItemMongodbRepo(IPlaylistItemRepo):
         playlist_id: str,
     ) -> bool:
         try:
-            playlist_id = convert_object_id(playlist_id)
+            playlist_id = convert_database_id(playlist_id)
             result = await PlaylistItemCollection.find(
                 PlaylistItemCollection.playlist_id == playlist_id
             ).delete()

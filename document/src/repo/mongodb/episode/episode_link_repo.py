@@ -3,7 +3,7 @@ from src.domain.schemas.episode.episode_link import EpisodeLinkModel
 from src.infra.database.mongodb.collections.episode.episode_link_collection import EpisodeLinkCollection
 from src.models.schemas.filter.base_filter_criteria import BaseFilterCriteria
 from src.infra.exceptions.exceptions import EntityNotFoundError
-from src.infra.utils.convert_id import convert_object_id
+from src.infra.utils.convert_id import convert_database_id
 
 class EpisodeLinkMongodbRepo(IEpisodeLinkRepo):
         
@@ -13,7 +13,7 @@ class EpisodeLinkMongodbRepo(IEpisodeLinkRepo):
     ) -> EpisodeLinkModel:
         
         new_link = await EpisodeLinkCollection(
-            **link.model_dump_for_db(),
+            **link.model_dump_for_db(dump_for="create"),
         ).insert()
         return EpisodeLinkModel.model_validate(new_link, from_attributes=True)
         
@@ -24,7 +24,7 @@ class EpisodeLinkMongodbRepo(IEpisodeLinkRepo):
         
         try:
                                     
-            link_id = convert_object_id(link_id)
+            link_id = convert_database_id(link_id)
             
             link = await EpisodeLinkCollection.find_one(
                 EpisodeLinkCollection.id == link_id,
@@ -42,6 +42,7 @@ class EpisodeLinkMongodbRepo(IEpisodeLinkRepo):
         try:               
             
             to_update: dict = link.model_dump_for_db(
+                dump_for="update",
                 exclude_none=True,
             )
             
@@ -63,7 +64,7 @@ class EpisodeLinkMongodbRepo(IEpisodeLinkRepo):
     ) -> bool:
         
         try:
-            link_id = convert_object_id(link_id)
+            link_id = convert_database_id(link_id)
             result = await EpisodeLinkCollection.find(
                 EpisodeLinkCollection.id == link_id,
             ).delete()                       
@@ -78,7 +79,7 @@ class EpisodeLinkMongodbRepo(IEpisodeLinkRepo):
     ) -> list[EpisodeLinkModel]:
         
         try:
-            episode_id = convert_object_id(episode_id)
+            episode_id = convert_database_id(episode_id)
             query = EpisodeLinkCollection.find_many(
                 EpisodeLinkCollection.episode_id == episode_id,
             )
@@ -89,7 +90,7 @@ class EpisodeLinkMongodbRepo(IEpisodeLinkRepo):
                 ).limit(
                     criteria.limit
                 ).sort(
-                    EpisodeLinkCollection.created_at if criteria.order == "asc" else -EpisodeLinkCollection.created_at
+                    EpisodeLinkCollection.id if criteria.order == "asc" else -EpisodeLinkCollection.id
                 )
             
             links_list = await query.to_list()
@@ -103,7 +104,7 @@ class EpisodeLinkMongodbRepo(IEpisodeLinkRepo):
         episode_id: str,
     ) -> bool:
         try:
-            episode_id = convert_object_id(episode_id)
+            episode_id = convert_database_id(episode_id)
             result = await EpisodeLinkCollection.find(
                 EpisodeLinkCollection.episode_id == episode_id
             ).delete()

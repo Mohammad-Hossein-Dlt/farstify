@@ -18,13 +18,7 @@ class GetAllUsers:
     ) -> list[UserModel]:
         
         try:
-            users: list[UserModel] = await self.user_repo.get_all(criteria)
-            if isinstance(users, list):
-                if criteria.order == "asc":
-                    pass
-                elif criteria.order == "desc":
-                    users.reverse()
-            return users
+            return await self.user_repo.get_all(criteria)
         except AppBaseException:
             raise
         except:

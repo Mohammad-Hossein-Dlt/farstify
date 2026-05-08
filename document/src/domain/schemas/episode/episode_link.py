@@ -17,7 +17,6 @@ class EpisodeLinkModel(CustomBaseModel):
 
     model_config = ConfigDict(
         extra='allow',
-        populate_by_name=True,
     )
 
     @model_validator(mode='after')

@@ -1,7 +1,7 @@
 from ._router import router
 from fastapi import Depends, Query, HTTPException
 from src.routes.http_response.responses import ResponseMessage
-from document.src.models.schemas.filter.base_filter_criteria import BaseFilterCriteria
+from src.models.schemas.filter.base_filter_criteria import BaseFilterCriteria
 from src.repo.interface.document.Idocument_link_repo import IDocumentLinkRepo
 from src.routes.depends.repo_depend import document_link_repo_depend
 from src.usecases.document.link.get_by_document_id import GetAllLinks

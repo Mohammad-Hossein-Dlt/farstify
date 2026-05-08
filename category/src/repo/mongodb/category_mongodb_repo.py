@@ -3,8 +3,7 @@ from src.domain.schemas.category.category_model import CategoryModel
 from src.infra.database.mongodb.collections.category_collection import CategoryCollection
 from src.models.schemas.filter.categories_filter_input import CategoryFilterInput
 from src.infra.exceptions.exceptions import EntityNotFoundError, DuplicateEntityError
-from src.infra.utils.convert_id import convert_object_id
-
+from src.infra.utils.convert_id import convert_database_id
 from beanie.operators import And, Or, NotIn
 
 class CategoryMongodbRepo(ICategoryRepo):
@@ -19,7 +18,7 @@ class CategoryMongodbRepo(ICategoryRepo):
             raise DuplicateEntityError(409, "Category already exist")
         except EntityNotFoundError:
             new_category = await CategoryCollection(
-                **category.model_dump_for_db(),
+                **category.model_dump_for_db(dump_for="create"),
             ).insert()
             return CategoryModel.model_validate(new_category, from_attributes=True)
     
@@ -44,14 +43,11 @@ class CategoryMongodbRepo(ICategoryRepo):
         category_id: str,
     ) -> CategoryModel:
         
-        try:
-                                    
-            category_id = convert_object_id(category_id)
-            
+        try:     
+            category_id = convert_database_id(category_id)
             category = await CategoryCollection.find_one(
                 CategoryCollection.id == category_id,
             )
-                        
             return CategoryModel.model_validate(category, from_attributes=True)
         except:
             raise EntityNotFoundError(status_code=404, message="Category not found")
@@ -64,6 +60,7 @@ class CategoryMongodbRepo(ICategoryRepo):
         try:               
             
             to_update: dict = category.model_dump_for_db(
+                dump_for="update",
                 exclude_unset=True,
                 exclude_none=True,
             )
@@ -86,7 +83,7 @@ class CategoryMongodbRepo(ICategoryRepo):
     ) -> bool:
         
         try:
-            category_id = convert_object_id(category_id)
+            category_id = convert_database_id(category_id)
             result = await CategoryCollection.find(
                 CategoryCollection.id == category_id,
             ).delete()                       
@@ -122,11 +119,11 @@ class CategoryMongodbRepo(ICategoryRepo):
         criteria: CategoryFilterInput,
     ) -> list[CategoryModel]:
         
-        parents_list = await self.get_by_parent_id(criteria.id, criteria.contains_danglings)
+        parents_list: list[CategoryModel] = await self.get_by_parent_id(criteria.id, criteria.contains_danglings)
             
         for parent in parents_list:
             children = await self.get_by_parent_id(parent.id, criteria.contains_danglings)
-            
+
             if children:
                 setattr(parent, "children", children)
                 
@@ -145,7 +142,11 @@ class CategoryMongodbRepo(ICategoryRepo):
             if not p_id:
                 return result
                           
-            category = await self.get_by_id(p_id)
+            try:
+                category = await self.get_by_id(p_id)
+            except:
+                return []
+            
             result.append(category)
             if category.parent_id:
                 parent = await _get_ancestors(category.parent_id)
@@ -153,9 +154,7 @@ class CategoryMongodbRepo(ICategoryRepo):
             
             return result
                         
-        categories = await _get_ancestors(parent_id)
-        categories.reverse()
-        return categories
+        return await _get_ancestors(parent_id)
                     
     async def get_by_parent_id(
         self,
@@ -164,9 +163,10 @@ class CategoryMongodbRepo(ICategoryRepo):
     ) -> list[CategoryModel]:
         
         try:
-            parent_id = convert_object_id(parent_id)
+            parent_id = convert_database_id(parent_id)
             if not parent_id and contains_danglings:
-                valid_ids = await CategoryCollection.distinct("_id")        
+                valid_ids = await CategoryCollection.distinct("_id")
+                valid_ids = [ convert_database_id(_id) for _id in valid_ids ]     
                 categories_list = await CategoryCollection.find_many(
                     Or(
                         CategoryCollection.parent_id == parent_id,
@@ -208,7 +208,7 @@ class CategoryMongodbRepo(ICategoryRepo):
         parent_id: str,
     ) -> bool:
         try:
-            parent_id = convert_object_id(parent_id)
+            parent_id = convert_database_id(parent_id)
             result = await CategoryCollection.find(
                 CategoryCollection.parent_id == parent_id,
             ).delete()

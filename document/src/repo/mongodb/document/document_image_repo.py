@@ -3,7 +3,7 @@ from src.domain.schemas.document.document_image import DocumentImageModel
 from src.infra.database.mongodb.collections.document.document_image_collection import DocumentImageCollection
 from src.models.schemas.filter.base_filter_criteria import BaseFilterCriteria
 from src.infra.exceptions.exceptions import EntityNotFoundError
-from src.infra.utils.convert_id import convert_object_id
+from src.infra.utils.convert_id import convert_database_id
 
 class DocumentImageMongodbRepo(IDocumentImageRepo):
         
@@ -13,7 +13,7 @@ class DocumentImageMongodbRepo(IDocumentImageRepo):
     ) -> DocumentImageModel:
         
         new_document = await DocumentImageCollection(
-            **image.model_dump_for_db(),
+            **image.model_dump_for_db(dump_for="create"),
         ).insert()
         return DocumentImageModel.model_validate(new_document, from_attributes=True)
         
@@ -24,7 +24,7 @@ class DocumentImageMongodbRepo(IDocumentImageRepo):
         
         try:
                                     
-            image_id = convert_object_id(image_id)
+            image_id = convert_database_id(image_id)
             
             image = await DocumentImageCollection.find_one(
                 DocumentImageCollection.id == image_id,
@@ -42,6 +42,7 @@ class DocumentImageMongodbRepo(IDocumentImageRepo):
         try:               
             
             to_update: dict = image.model_dump_for_db(
+                dump_for="update",
                 exclude_none=True,
             )
             
@@ -63,7 +64,7 @@ class DocumentImageMongodbRepo(IDocumentImageRepo):
     ) -> bool:
         
         try:
-            image_id = convert_object_id(image_id)
+            image_id = convert_database_id(image_id)
             result = await DocumentImageCollection.find(
                 DocumentImageCollection.id == image_id,
             ).delete()                       
@@ -78,7 +79,7 @@ class DocumentImageMongodbRepo(IDocumentImageRepo):
     ) -> list[DocumentImageModel]:
         
         try:
-            document_id = convert_object_id(document_id)
+            document_id = convert_database_id(document_id)
             query = DocumentImageCollection.find_many(
                 DocumentImageCollection.document_id == document_id,
             )
@@ -89,7 +90,7 @@ class DocumentImageMongodbRepo(IDocumentImageRepo):
                 ).limit(
                     criteria.limit
                 ).sort(
-                    DocumentImageCollection.created_at if criteria.order == "asc" else -DocumentImageCollection.created_at
+                    DocumentImageCollection.id if criteria.order == "asc" else -DocumentImageCollection.id
                 )
             
             images_list = await query.to_list()
@@ -103,7 +104,7 @@ class DocumentImageMongodbRepo(IDocumentImageRepo):
         document_id: str,
     ) -> bool:
         try:
-            document_id = convert_object_id(document_id)
+            document_id = convert_database_id(document_id)
             result = await DocumentImageCollection.find(
                 DocumentImageCollection.document_id == document_id
             ).delete()

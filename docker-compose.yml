@@ -1,18 +1,60 @@
 services:
-  # category services
-  # category-service:
-  #   working_dir: /app
-  #   build:
-  #     context: ./category
-  #     dockerfile: Dockerfile
-  #   container_name: category_service
-  #   restart: always
-  #   env_file:
-  #     - .env
-  #   depends_on:
-  #     - mongodb-service
-  #   ports:
-  #     - 8001:80
+  # services
+  artist-service:
+    working_dir: /app
+    build:
+      context: ./artist
+      dockerfile: Dockerfile
+    container_name: artist_service
+    restart: always
+    ports:
+      - 81:80
+    env_file:
+      - .env
+    depends_on:
+      - mongodb-service
+
+  category-service:
+    working_dir: /app
+    build:
+      context: ./category
+      dockerfile: Dockerfile
+    container_name: category_service
+    restart: always
+    ports:
+      - 82:80
+    env_file:
+      - .env
+    depends_on:
+      - mongodb-service
+
+  document-service:
+    working_dir: /app
+    build:
+      context: ./document
+      dockerfile: Dockerfile
+    container_name: document_service
+    restart: always
+    ports:
+      - 83:80
+    env_file:
+      - .env
+    depends_on:
+      - mongodb-service
+
+  user-service:
+    working_dir: /app
+    build:
+      context: ./user
+      dockerfile: Dockerfile
+    container_name: user_service
+    restart: always
+    ports:
+      - 84:80
+    env_file:
+      - .env
+    depends_on:
+      - mongodb-service
 
   16k-service:
     working_dir: /app
@@ -140,11 +182,8 @@ services:
     env_file:
       - .env
     environment:
-      MONGO_HOST: ${MONGODB__HOST}
-      MONGO_PORT: ${MONGODB__PORT}
       MONGO_INITDB_ROOT_USERNAME: ${MONGODB__USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGODB__PASSWORD}
-      # MONGO_INITDB_DATABASE: ${MONGODB__DB_NAME}
 
   # broker
   broker:

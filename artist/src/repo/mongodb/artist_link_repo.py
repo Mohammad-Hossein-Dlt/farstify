@@ -3,7 +3,7 @@ from src.domain.schemas.artist.artist_link import ArtistLinkModel
 from src.infra.database.mongodb.collections.artist_link_collection import ArtistLinkCollection
 from src.models.schemas.filter.base_filter_criteria import BaseFilterCriteria
 from src.infra.exceptions.exceptions import EntityNotFoundError
-from src.infra.utils.convert_id import convert_object_id
+from src.infra.utils.convert_id import convert_database_id
 
 class ArtistLinkMongodbRepo(IArtistLinkRepo):
         
@@ -13,7 +13,7 @@ class ArtistLinkMongodbRepo(IArtistLinkRepo):
     ) -> ArtistLinkModel:
         
         new_link = await ArtistLinkCollection(
-            **link.model_dump_for_db(),
+            **link.model_dump_for_db(dump_for="create"),
         ).insert()
         return ArtistLinkModel.model_validate(new_link, from_attributes=True)
         
@@ -24,7 +24,7 @@ class ArtistLinkMongodbRepo(IArtistLinkRepo):
         
         try:
                                     
-            link_id = convert_object_id(link_id)
+            link_id = convert_database_id(link_id)
             
             link = await ArtistLinkCollection.find_one(
                 ArtistLinkCollection.id == link_id,
@@ -42,6 +42,7 @@ class ArtistLinkMongodbRepo(IArtistLinkRepo):
         try:               
             
             to_update: dict = link.model_dump_for_db(
+                dump_for="update",
                 exclude_none=True,
             )
             
@@ -63,7 +64,7 @@ class ArtistLinkMongodbRepo(IArtistLinkRepo):
     ) -> bool:
         
         try:
-            link_id = convert_object_id(link_id)
+            link_id = convert_database_id(link_id)
             result = await ArtistLinkCollection.find(
                 ArtistLinkCollection.id == link_id,
             ).delete()                       
@@ -78,7 +79,7 @@ class ArtistLinkMongodbRepo(IArtistLinkRepo):
     ) -> list[ArtistLinkModel]:
         
         try:
-            artist_id = convert_object_id(artist_id)
+            artist_id = convert_database_id(artist_id)
             query = ArtistLinkCollection.find_many(
                 ArtistLinkCollection.artist_id == artist_id,
             )
@@ -89,7 +90,7 @@ class ArtistLinkMongodbRepo(IArtistLinkRepo):
                 ).limit(
                     criteria.limit
                 ).sort(
-                    ArtistLinkCollection.created_at if criteria.order == "asc" else -ArtistLinkCollection.created_at
+                    ArtistLinkCollection.id if criteria.order == "asc" else -ArtistLinkCollection.id
                 )
             
             links_list = await query.to_list()
@@ -103,7 +104,7 @@ class ArtistLinkMongodbRepo(IArtistLinkRepo):
         artist_id: str,
     ) -> bool:
         try:
-            artist_id = convert_object_id(artist_id)
+            artist_id = convert_database_id(artist_id)
             result = await ArtistLinkCollection.find(
                 ArtistLinkCollection.artist_id == artist_id
             ).delete()

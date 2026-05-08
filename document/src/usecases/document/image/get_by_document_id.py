@@ -1,7 +1,7 @@
 from src.repo.interface.document.Idocument_repo import IDocumentRepo
 from src.repo.interface.document.Idocument_image_repo import IDocumentImageRepo
 from src.repo.interface.Istorage_repo import IStorageRepo
-from document.src.models.schemas.filter.base_filter_criteria import BaseFilterCriteria
+from src.models.schemas.filter.base_filter_criteria import BaseFilterCriteria
 from src.domain.schemas.document.document_image import DocumentImageModel
 from src.infra.exceptions.exceptions import AppBaseException, OperationFailureException
 
@@ -30,7 +30,6 @@ class GetAllImages:
                 if criteria.order == "asc":
                     images.sort(key=lambda x: (x.order is None, x.order))
                 elif criteria.order == "desc":
-                    images.reverse()
                     images.sort(key=lambda x: (0 if x.order is None else 1, x.order), reverse=True)
             return images
         except AppBaseException:

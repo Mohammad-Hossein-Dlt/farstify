@@ -1,7 +1,7 @@
 from src.repo.interface.episode.Iepisode_repo import IEpisodeRepo
 from src.repo.interface.episode.Iepisode_image_repo import IEpisodeImageRepo
 from src.repo.interface.Istorage_repo import IStorageRepo
-from document.src.models.schemas.filter.base_filter_criteria import BaseFilterCriteria
+from src.models.schemas.filter.base_filter_criteria import BaseFilterCriteria
 from src.domain.schemas.episode.episode_image import EpisodeImageModel
 from src.infra.exceptions.exceptions import AppBaseException, OperationFailureException
 
@@ -30,7 +30,6 @@ class GetAllImages:
                 if criteria.order == "asc":
                     images.sort(key=lambda x: (x.order is None, x.order))
                 elif criteria.order == "desc":
-                    images.reverse()
                     images.sort(key=lambda x: (0 if x.order is None else 1, x.order), reverse=True)
             return images
         except AppBaseException:

@@ -1,8 +1,6 @@
 from pydantic import BaseModel, ConfigDict, model_validator, field_validator, field_serializer
 from bson.objectid import ObjectId
-from typing import TypeAlias, Literal, ClassVar, Any
-
-db_stack_types: TypeAlias = Literal["no-sql", "sql"]
+from typing import Literal, ClassVar, Any
 
 class CustomBaseModel(BaseModel):
 
@@ -41,6 +39,7 @@ class CustomBaseModel(BaseModel):
 
     def model_dump_for_db(
         self,
+        dump_for: Literal["create", "update"],
         exclude_unset: bool = False,
         exclude_none: bool = False,
         exclude: set | None = None,
@@ -48,6 +47,9 @@ class CustomBaseModel(BaseModel):
     ) -> dict[str, Any]:
         
         exclude = (exclude or set()) | {"id", "_id"}
+        
+        if dump_for == "update":
+            exclude.add("created_at")
         
         return self.model_dump(
             exclude_unset=exclude_unset,

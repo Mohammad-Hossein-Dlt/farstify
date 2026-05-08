@@ -24,7 +24,6 @@ class GetAllLinks:
                 if criteria.order == "asc":
                     links.sort(key=lambda x: (x.order is None, x.order))
                 elif criteria.order == "desc":
-                    links.reverse()
                     links.sort(key=lambda x: (0 if x.order is None else 1, x.order), reverse=True)
             return links
         except AppBaseException:

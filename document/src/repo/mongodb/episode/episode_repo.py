@@ -3,7 +3,7 @@ from src.domain.schemas.episode.episode_model import EpisodeModel
 from src.infra.database.mongodb.collections.episode.episode_collection import EpisodeCollection
 from src.models.schemas.filter.base_filter_criteria import BaseFilterCriteria
 from src.infra.exceptions.exceptions import EntityNotFoundError
-from src.infra.utils.convert_id import convert_object_id
+from src.infra.utils.convert_id import convert_database_id
 
 class EpisodeMongodbRepo(IEpisodeRepo):
         
@@ -13,7 +13,7 @@ class EpisodeMongodbRepo(IEpisodeRepo):
     ) -> EpisodeModel:
 
         new_episode = await EpisodeCollection(
-            **episode.model_dump_for_db(),
+            **episode.model_dump_for_db(dump_for="create"),
         ).insert()
         return EpisodeModel.model_validate(new_episode, from_attributes=True)
         
@@ -24,7 +24,7 @@ class EpisodeMongodbRepo(IEpisodeRepo):
         
         try:
                                     
-            episode_id = convert_object_id(episode_id)
+            episode_id = convert_database_id(episode_id)
             
             episode = await EpisodeCollection.find_one(
                 EpisodeCollection.id == episode_id,
@@ -42,7 +42,7 @@ class EpisodeMongodbRepo(IEpisodeRepo):
         try:               
             
             to_update: dict = episode.model_dump_for_db(
-                # exclude_unset=True,
+                dump_for="update",
                 exclude_none=True,
             )
             
@@ -64,7 +64,7 @@ class EpisodeMongodbRepo(IEpisodeRepo):
     ) -> bool:
         
         try:
-            episode_id = convert_object_id(episode_id)
+            episode_id = convert_database_id(episode_id)
             delete_episode = await EpisodeCollection.find(
                 EpisodeCollection.id == episode_id,
             ).delete()                       
@@ -79,7 +79,7 @@ class EpisodeMongodbRepo(IEpisodeRepo):
     ) -> list[EpisodeModel]:
         
         try:
-            document_id = convert_object_id(document_id)
+            document_id = convert_database_id(document_id)
             query = EpisodeCollection.find_many(
                 EpisodeCollection.document_id == document_id,
             )
@@ -90,7 +90,7 @@ class EpisodeMongodbRepo(IEpisodeRepo):
                 ).limit(
                     criteria.limit
                 ).sort(
-                    EpisodeCollection.created_at if criteria.order == "asc" else -EpisodeCollection.created_at
+                    EpisodeCollection.id if criteria.order == "asc" else -EpisodeCollection.id
                 )
             
             episodes_list = await query.to_list()
@@ -105,7 +105,7 @@ class EpisodeMongodbRepo(IEpisodeRepo):
     ) -> bool:
         
         try:
-            document_id = convert_object_id(document_id)
+            document_id = convert_database_id(document_id)
             delete_episodes = await EpisodeCollection.find(
                 EpisodeCollection.document_id == document_id,
             ).delete()                       
@@ -125,7 +125,7 @@ class EpisodeMongodbRepo(IEpisodeRepo):
                 ).limit(
                     criteria.limit
                 ).sort(
-                    EpisodeCollection.created_at if criteria.order == "asc" else -EpisodeCollection.created_at
+                    EpisodeCollection.id if criteria.order == "asc" else -EpisodeCollection.id
                 )
             
             episodes_list = await query.to_list()

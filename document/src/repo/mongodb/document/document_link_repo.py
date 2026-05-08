@@ -3,7 +3,7 @@ from src.domain.schemas.document.document_link import DocumentLinkModel
 from src.infra.database.mongodb.collections.document.document_link_collection import DocumentLinkCollection
 from src.models.schemas.filter.base_filter_criteria import BaseFilterCriteria
 from src.infra.exceptions.exceptions import EntityNotFoundError
-from src.infra.utils.convert_id import convert_object_id
+from src.infra.utils.convert_id import convert_database_id
 
 class DocumentLinkMongodbRepo(IDocumentLinkRepo):
         
@@ -13,7 +13,7 @@ class DocumentLinkMongodbRepo(IDocumentLinkRepo):
     ) -> DocumentLinkModel:
         
         new_link = await DocumentLinkCollection(
-            **link.model_dump_for_db(),
+            **link.model_dump_for_db(dump_for="create"),
         ).insert()
         return DocumentLinkModel.model_validate(new_link, from_attributes=True)
         
@@ -24,7 +24,7 @@ class DocumentLinkMongodbRepo(IDocumentLinkRepo):
         
         try:
                                     
-            link_id = convert_object_id(link_id)
+            link_id = convert_database_id(link_id)
             
             link = await DocumentLinkCollection.find_one(
                 DocumentLinkCollection.id == link_id,
@@ -42,6 +42,7 @@ class DocumentLinkMongodbRepo(IDocumentLinkRepo):
         try:               
             
             to_update: dict = link.model_dump_for_db(
+                dump_for="update",
                 exclude_none=True,
             )
             
@@ -63,7 +64,7 @@ class DocumentLinkMongodbRepo(IDocumentLinkRepo):
     ) -> bool:
         
         try:
-            link_id = convert_object_id(link_id)
+            link_id = convert_database_id(link_id)
             result = await DocumentLinkCollection.find(
                 DocumentLinkCollection.id == link_id,
             ).delete()                       
@@ -78,7 +79,7 @@ class DocumentLinkMongodbRepo(IDocumentLinkRepo):
     ) -> list[DocumentLinkModel]:
         
         try:
-            document_id = convert_object_id(document_id)
+            document_id = convert_database_id(document_id)
             query = DocumentLinkCollection.find_many(
                 DocumentLinkCollection.document_id == document_id,
             )
@@ -89,7 +90,7 @@ class DocumentLinkMongodbRepo(IDocumentLinkRepo):
                 ).limit(
                     criteria.limit
                 ).sort(
-                    DocumentLinkCollection.created_at if criteria.order == "asc" else -DocumentLinkCollection.created_at
+                    DocumentLinkCollection.id if criteria.order == "asc" else -DocumentLinkCollection.id
                 )
             
             links_list = await query.to_list()
@@ -103,7 +104,7 @@ class DocumentLinkMongodbRepo(IDocumentLinkRepo):
         document_id: str,
     ) -> bool:
         try:
-            document_id = convert_object_id(document_id)
+            document_id = convert_database_id(document_id)
             result = await DocumentLinkCollection.find(
                 DocumentLinkCollection.document_id == document_id
             ).delete()

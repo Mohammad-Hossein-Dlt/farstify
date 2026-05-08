@@ -3,7 +3,7 @@ from src.domain.schemas.like.like_model import LikeModel
 from src.infra.database.mongodb.collections.like.likes_collection import LikesCollection
 from src.models.schemas.filter.base_filter_criteria import BaseFilterCriteria
 from src.infra.exceptions.exceptions import EntityNotFoundError
-from src.infra.utils.convert_id import convert_object_id
+from src.infra.utils.convert_id import convert_database_id
 from beanie.operators import And
 
 class LikeMongodbRepo(ILikesRepo):
@@ -15,7 +15,7 @@ class LikeMongodbRepo(ILikesRepo):
         
         try:
             new_user = await LikesCollection(
-                **like.model_dump_for_db(),
+                **like.model_dump_for_db(dump_for="create"),
             ).insert()
             return LikeModel.model_validate(new_user, from_attributes=True)
         except:
@@ -44,7 +44,7 @@ class LikeMongodbRepo(ILikesRepo):
     ) -> LikeModel:
         
         try:
-            like_id = convert_object_id(like_id)
+            like_id = convert_database_id(like_id)
             like = await LikesCollection.find_one(
                 LikesCollection.id == like_id,
             )
@@ -60,6 +60,7 @@ class LikeMongodbRepo(ILikesRepo):
         
         try:               
             to_update: dict = like.model_dump_for_db(
+                dump_for="update",
                 exclude_none=True,
             )
             
@@ -81,7 +82,7 @@ class LikeMongodbRepo(ILikesRepo):
     ) -> bool:
         
         try:
-            like_id = convert_object_id(like_id)
+            like_id = convert_database_id(like_id)
             result = await LikesCollection.find(
                 LikesCollection.id == like_id,
             ).delete()                       
@@ -96,7 +97,7 @@ class LikeMongodbRepo(ILikesRepo):
     ) -> list[LikeModel]:
         
         try:
-            user_id = convert_object_id(user_id)
+            user_id = convert_database_id(user_id)
             query = LikesCollection.find_many(
                 LikesCollection.user_id == user_id,
             )
@@ -107,7 +108,7 @@ class LikeMongodbRepo(ILikesRepo):
                 ).limit(
                     criteria.limit
                 ).sort(
-                    LikesCollection.created_at if criteria.order == "asc" else -LikesCollection.created_at
+                    LikesCollection.id if criteria.order == "asc" else -LikesCollection.id
                 )
             
             likes_list = await query.to_list()
@@ -121,7 +122,7 @@ class LikeMongodbRepo(ILikesRepo):
         user_id: str,
     ) -> bool:
         try:
-            user_id = convert_object_id(user_id)
+            user_id = convert_database_id(user_id)
             result = await LikesCollection.find(
                 LikesCollection.user_id == user_id
             ).delete()

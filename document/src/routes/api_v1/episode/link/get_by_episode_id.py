@@ -1,7 +1,7 @@
 from ._router import router
 from fastapi import Depends, Query, HTTPException
 from src.routes.http_response.responses import ResponseMessage
-from document.src.models.schemas.filter.base_filter_criteria import BaseFilterCriteria
+from src.models.schemas.filter.base_filter_criteria import BaseFilterCriteria
 from src.repo.interface.episode.Iepisode_link_repo import IEpisodeLinkRepo
 from src.routes.depends.repo_depend import episode_link_repo_depend
 from src.usecases.episode.link.get_by_episode_id import GetAllLinks

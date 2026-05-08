@@ -18,13 +18,7 @@ class GetAllArtists:
     ) -> list[ArtistModel]:
         
         try:
-            artists: list[ArtistModel] = await self.artist_repo.get_all(criteria)
-            if isinstance(artists, list):
-                if criteria.order == "asc":
-                    pass
-                elif criteria.order == "desc":
-                    artists.reverse()
-            return artists
+            return await self.artist_repo.get_all(criteria)
         except AppBaseException:
             raise
         except:

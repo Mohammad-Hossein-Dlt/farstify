@@ -3,7 +3,7 @@ from src.domain.schemas.user.user_model import UserModel
 from src.infra.database.mongodb.collections.user.user_collection import UserCollection
 from src.models.schemas.filter.base_filter_criteria import BaseFilterCriteria
 from src.infra.exceptions.exceptions import EntityNotFoundError, DuplicateEntityError
-from src.infra.utils.convert_id import convert_object_id
+from src.infra.utils.convert_id import convert_database_id
 
 class UserMongodbRepo(IUserRepo):
         
@@ -17,7 +17,7 @@ class UserMongodbRepo(IUserRepo):
             raise DuplicateEntityError(409, "User already exist")
         except EntityNotFoundError:
             new_user = await UserCollection(
-                **user.model_dump_for_db(),
+                **user.model_dump_for_db(dump_for="create"),
             ).insert()
             return UserModel.model_validate(new_user, from_attributes=True)
     
@@ -41,7 +41,7 @@ class UserMongodbRepo(IUserRepo):
         
         try:
                                     
-            user_id = convert_object_id(user_id)
+            user_id = convert_database_id(user_id)
             
             user = await UserCollection.find_one(
                 UserCollection.id == user_id,
@@ -59,7 +59,7 @@ class UserMongodbRepo(IUserRepo):
         try:               
             
             to_update: dict = user.model_dump_for_db(
-                # exclude_unset=True,
+                dump_for="update",
                 exclude_none=True,
             )
             
@@ -81,7 +81,7 @@ class UserMongodbRepo(IUserRepo):
     ) -> bool:
         
         try:
-            user_id = convert_object_id(user_id)
+            user_id = convert_database_id(user_id)
             delete_user = await UserCollection.find(
                 UserCollection.id == user_id,
             ).delete()                       
@@ -102,7 +102,7 @@ class UserMongodbRepo(IUserRepo):
                 ).limit(
                     criteria.limit
                 ).sort(
-                    UserCollection.created_at if criteria.order == "asc" else -UserCollection.created_at
+                    UserCollection.id if criteria.order == "asc" else -UserCollection.id
                 )
             
             users_list = await query.to_list()

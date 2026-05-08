@@ -3,7 +3,7 @@ from src.domain.schemas.user.user_image import UserImageModel
 from src.infra.database.mongodb.collections.user.user_image_collection import UserImageCollection
 from src.models.schemas.filter.base_filter_criteria import BaseFilterCriteria
 from src.infra.exceptions.exceptions import EntityNotFoundError
-from src.infra.utils.convert_id import convert_object_id
+from src.infra.utils.convert_id import convert_database_id
 
 class UserImageMongodbRepo(IUserImageRepo):
         
@@ -14,7 +14,7 @@ class UserImageMongodbRepo(IUserImageRepo):
         
         try:
             new_user = await UserImageCollection(
-                **image.model_dump_for_db(),
+                **image.model_dump_for_db(dump_for="create"),
             ).insert()
             return UserImageModel.model_validate(new_user, from_attributes=True)
         except:
@@ -27,7 +27,7 @@ class UserImageMongodbRepo(IUserImageRepo):
         
         try:
                                     
-            image_id = convert_object_id(image_id)
+            image_id = convert_database_id(image_id)
             
             image = await UserImageCollection.find_one(
                 UserImageCollection.id == image_id,
@@ -45,6 +45,7 @@ class UserImageMongodbRepo(IUserImageRepo):
         try:               
             
             to_update: dict = image.model_dump_for_db(
+                dump_for="update",
                 exclude_none=True,
             )
             
@@ -66,7 +67,7 @@ class UserImageMongodbRepo(IUserImageRepo):
     ) -> bool:
         
         try:
-            image_id = convert_object_id(image_id)
+            image_id = convert_database_id(image_id)
             result = await UserImageCollection.find(
                 UserImageCollection.id == image_id,
             ).delete()                       
@@ -81,7 +82,7 @@ class UserImageMongodbRepo(IUserImageRepo):
     ) -> list[UserImageModel]:
         
         try:
-            user_id = convert_object_id(user_id)
+            user_id = convert_database_id(user_id)
             query = UserImageCollection.find_many(
                 UserImageCollection.user_id == user_id,
             )
@@ -92,7 +93,7 @@ class UserImageMongodbRepo(IUserImageRepo):
                 ).limit(
                     criteria.limit
                 ).sort(
-                    UserImageCollection.created_at if criteria.order == "asc" else -UserImageCollection.created_at
+                    UserImageCollection.id if criteria.order == "asc" else -UserImageCollection.id
                 )
             
             images_list = await query.to_list()
@@ -106,7 +107,7 @@ class UserImageMongodbRepo(IUserImageRepo):
         user_id: str,
     ) -> bool:
         try:
-            user_id = convert_object_id(user_id)
+            user_id = convert_database_id(user_id)
             result = await UserImageCollection.find(
                 UserImageCollection.user_id == user_id
             ).delete()

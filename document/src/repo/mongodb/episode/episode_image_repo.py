@@ -3,7 +3,7 @@ from src.domain.schemas.episode.episode_image import EpisodeImageModel
 from src.infra.database.mongodb.collections.episode.episode_image_collection import EpisodeImageCollection
 from src.models.schemas.filter.base_filter_criteria import BaseFilterCriteria
 from src.infra.exceptions.exceptions import EntityNotFoundError
-from src.infra.utils.convert_id import convert_object_id
+from src.infra.utils.convert_id import convert_database_id
 
 class EpisodeImageMongodbRepo(IEpisodeImageRepo):
         
@@ -13,7 +13,7 @@ class EpisodeImageMongodbRepo(IEpisodeImageRepo):
     ) -> EpisodeImageModel:
         
         new_episode = await EpisodeImageCollection(
-            **image.model_dump_for_db(),
+            **image.model_dump_for_db(dump_for="create"),
         ).insert()
         return EpisodeImageModel.model_validate(new_episode, from_attributes=True)
         
@@ -24,7 +24,7 @@ class EpisodeImageMongodbRepo(IEpisodeImageRepo):
         
         try:
                                     
-            image_id = convert_object_id(image_id)
+            image_id = convert_database_id(image_id)
             
             image = await EpisodeImageCollection.find_one(
                 EpisodeImageCollection.id == image_id,
@@ -42,6 +42,7 @@ class EpisodeImageMongodbRepo(IEpisodeImageRepo):
         try:               
             
             to_update: dict = image.model_dump_for_db(
+                dump_for="update",
                 exclude_none=True,
             )
             
@@ -63,7 +64,7 @@ class EpisodeImageMongodbRepo(IEpisodeImageRepo):
     ) -> bool:
         
         try:
-            image_id = convert_object_id(image_id)
+            image_id = convert_database_id(image_id)
             result = await EpisodeImageCollection.find(
                 EpisodeImageCollection.id == image_id,
             ).delete()                       
@@ -78,7 +79,7 @@ class EpisodeImageMongodbRepo(IEpisodeImageRepo):
     ) -> list[EpisodeImageModel]:
         
         try:
-            episode_id = convert_object_id(episode_id)
+            episode_id = convert_database_id(episode_id)
             query = EpisodeImageCollection.find_many(
                 EpisodeImageCollection.episode_id == episode_id,
             )
@@ -89,7 +90,7 @@ class EpisodeImageMongodbRepo(IEpisodeImageRepo):
                 ).limit(
                     criteria.limit
                 ).sort(
-                    EpisodeImageCollection.created_at if criteria.order == "asc" else -EpisodeImageCollection.created_at
+                    EpisodeImageCollection.id if criteria.order == "asc" else -EpisodeImageCollection.id
                 )
             
             images_list = await query.to_list()
@@ -103,7 +104,7 @@ class EpisodeImageMongodbRepo(IEpisodeImageRepo):
         episode_id: str,
     ) -> bool:
         try:
-            episode_id = convert_object_id(episode_id)
+            episode_id = convert_database_id(episode_id)
             result = await EpisodeImageCollection.find(
                 EpisodeImageCollection.episode_id == episode_id
             ).delete()

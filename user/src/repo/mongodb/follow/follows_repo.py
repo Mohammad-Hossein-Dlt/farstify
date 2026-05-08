@@ -3,7 +3,7 @@ from src.domain.schemas.follow.follow_model import FollowModel
 from src.infra.database.mongodb.collections.follow.follows_collection import FollowsCollection
 from src.models.schemas.filter.base_filter_criteria import BaseFilterCriteria
 from src.infra.exceptions.exceptions import EntityNotFoundError
-from src.infra.utils.convert_id import convert_object_id
+from src.infra.utils.convert_id import convert_database_id
 from beanie.operators import And
 
 class FollowsMongodbRepo(IFollowsRepo):
@@ -15,7 +15,7 @@ class FollowsMongodbRepo(IFollowsRepo):
         
         try:
             new_user = await FollowsCollection(
-                **follow.model_dump_for_db(),
+                **follow.model_dump_for_db(dump_for="create"),
             ).insert()
             return FollowModel.model_validate(new_user, from_attributes=True)
         except:
@@ -44,7 +44,7 @@ class FollowsMongodbRepo(IFollowsRepo):
     ) -> FollowModel:
         
         try:
-            follow_id = convert_object_id(follow_id)
+            follow_id = convert_database_id(follow_id)
             follow = await FollowsCollection.find_one(
                 FollowsCollection.id == follow_id,
             )
@@ -60,6 +60,7 @@ class FollowsMongodbRepo(IFollowsRepo):
         
         try:               
             to_update: dict = follow.model_dump_for_db(
+                dump_for="update",
                 exclude_none=True,
             )
             
@@ -81,7 +82,7 @@ class FollowsMongodbRepo(IFollowsRepo):
     ) -> bool:
         
         try:
-            follow_id = convert_object_id(follow_id)
+            follow_id = convert_database_id(follow_id)
             result = await FollowsCollection.find(
                 FollowsCollection.id == follow_id,
             ).delete()                       
@@ -96,7 +97,7 @@ class FollowsMongodbRepo(IFollowsRepo):
     ) -> list[FollowModel]:
         
         try:
-            user_id = convert_object_id(user_id)
+            user_id = convert_database_id(user_id)
             query = FollowsCollection.find_many(
                 FollowsCollection.user_id == user_id,
             )
@@ -107,7 +108,7 @@ class FollowsMongodbRepo(IFollowsRepo):
                 ).limit(
                     criteria.limit
                 ).sort(
-                    FollowsCollection.created_at if criteria.order == "asc" else -FollowsCollection.created_at
+                    FollowsCollection.id if criteria.order == "asc" else -FollowsCollection.id
                 )
             
             follows_list = await query.to_list()
@@ -121,7 +122,7 @@ class FollowsMongodbRepo(IFollowsRepo):
         user_id: str,
     ) -> bool:
         try:
-            user_id = convert_object_id(user_id)
+            user_id = convert_database_id(user_id)
             result = await FollowsCollection.find(
                 FollowsCollection.user_id == user_id
             ).delete()

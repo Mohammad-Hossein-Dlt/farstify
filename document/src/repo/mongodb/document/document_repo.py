@@ -3,7 +3,7 @@ from src.domain.schemas.document.document_model import DocumentModel
 from src.infra.database.mongodb.collections.document.document_collection import DocumentCollection
 from src.models.schemas.filter.base_filter_criteria import BaseFilterCriteria
 from src.infra.exceptions.exceptions import EntityNotFoundError
-from src.infra.utils.convert_id import convert_object_id
+from src.infra.utils.convert_id import convert_database_id
 
 class DocumentMongodbRepo(IDocumentRepo):
         
@@ -13,7 +13,7 @@ class DocumentMongodbRepo(IDocumentRepo):
     ) -> DocumentModel:
 
         new_document = await DocumentCollection(
-            **document.model_dump_for_db(),
+            **document.model_dump_for_db(dump_for="create"),
         ).insert()
         return DocumentModel.model_validate(new_document, from_attributes=True)
         
@@ -24,7 +24,7 @@ class DocumentMongodbRepo(IDocumentRepo):
         
         try:
                                     
-            document_id = convert_object_id(document_id)
+            document_id = convert_database_id(document_id)
             
             document = await DocumentCollection.find_one(
                 DocumentCollection.id == document_id,
@@ -42,7 +42,7 @@ class DocumentMongodbRepo(IDocumentRepo):
         try:               
             
             to_update: dict = document.model_dump_for_db(
-                # exclude_unset=True,
+                dump_for="update",
                 exclude_none=True,
             )
             
@@ -64,7 +64,7 @@ class DocumentMongodbRepo(IDocumentRepo):
     ) -> bool:
         
         try:
-            document_id = convert_object_id(document_id)
+            document_id = convert_database_id(document_id)
             delete_document = await DocumentCollection.find(
                 DocumentCollection.id == document_id,
             ).delete()                       
@@ -79,7 +79,7 @@ class DocumentMongodbRepo(IDocumentRepo):
     ) -> list[DocumentModel]:
         
         try:
-            artist_id = convert_object_id(artist_id)
+            artist_id = convert_database_id(artist_id)
             query = DocumentCollection.find_many(
                 DocumentCollection.artist_id == artist_id,
             )
@@ -90,7 +90,7 @@ class DocumentMongodbRepo(IDocumentRepo):
                 ).limit(
                     criteria.limit
                 ).sort(
-                    DocumentCollection.created_at if criteria.order == "asc" else -DocumentCollection.created_at
+                    DocumentCollection.id if criteria.order == "asc" else -DocumentCollection.id
                 )
             
             documents_list = await query.to_list()               
@@ -105,7 +105,7 @@ class DocumentMongodbRepo(IDocumentRepo):
     ) -> bool:
         
         try:
-            artist_id = convert_object_id(artist_id)
+            artist_id = convert_database_id(artist_id)
             delete_documents = await DocumentCollection.find(
                 DocumentCollection.artist_id == artist_id,
             ).delete()                       
@@ -122,6 +122,8 @@ class DocumentMongodbRepo(IDocumentRepo):
                 criteria.page * criteria.limit
             ).limit(
                 criteria.limit
+            ).sort(
+                DocumentCollection.id if criteria.order == "asc" else -DocumentCollection.id
             ).to_list()             
             return [ DocumentModel.model_validate(document, from_attributes=True) for document in documents_list ]
         except:
